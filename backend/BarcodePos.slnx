@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="BarcodePos.API/BarcodePos.API.csproj" />
+  <Project Path="BarcodePos.Application/BarcodePos.Application.csproj" />
+  <Project Path="BarcodePos.Domain/BarcodePos.Domain.csproj" />
+  <Project Path="BarcodePos.Infrastructure/BarcodePos.Infrastructure.csproj" />
+  <Project Path="BarcodePos.IntegrationTests/BarcodePos.IntegrationTests.csproj" />
+  <Project Path="BarcodePos.UnitTests/BarcodePos.UnitTests.csproj" />
+</Solution>
