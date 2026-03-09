@@ -10,6 +10,7 @@ public class LicenseCheckMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly string _machineId;
+    private readonly bool _skipLicenseCheck;
 
     // Son kontrol zamanı ve sonucu — her istekte dosya okumamak için cache
     private static DateTime _lastCheckTime = DateTime.MinValue;
@@ -22,6 +23,9 @@ public class LicenseCheckMiddleware
     {
         _next = next;
         _machineId = LicenseService.GetMachineId();
+        // Cloud/Railway ortamında lisans kontrolü atla
+        _skipLicenseCheck = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISABLE_LICENSE_CHECK"))
+                         || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT"));
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -37,6 +41,13 @@ public class LicenseCheckMiddleware
 
         // Statik dosyalar muaf
         if (!path.StartsWith("/api/"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Cloud ortamda lisans kontrolü atla
+        if (_skipLicenseCheck)
         {
             await _next(context);
             return;

@@ -89,6 +89,13 @@ try
     // ── Health Check ──
     builder.Services.AddHealthChecks();
 
+    // ── Railway / Cloud PORT desteği ──
+    var port = Environment.GetEnvironmentVariable("PORT");
+    if (!string.IsNullOrEmpty(port))
+    {
+        builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+    }
+
     var app = builder.Build();
 
     // ── License DB — her zaman EnsureCreated (migration kullanmaz) ──
@@ -127,7 +134,8 @@ try
         });
     }
 
-    if (!app.Environment.IsDevelopment())
+    // HTTPS redirect — Cloud (Railway/Docker) ortamında devre dışı (reverse proxy handle eder)
+    if (!app.Environment.IsDevelopment() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PORT")))
     {
         app.UseHttpsRedirection();
     }
