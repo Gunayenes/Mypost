@@ -19,7 +19,7 @@
     }
   ],
   "win": {
-    "icon": "public/icon.svg",
+    "icon": "public/icon.png",
     "target": [
       {
         "target": "nsis",

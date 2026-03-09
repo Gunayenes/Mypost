@@ -1,0 +1,1 @@
+import{r}from"./index-D4KbRqJh.js";function n(){const o=r.useCallback((s,t)=>{window.dispatchEvent(new CustomEvent("toast",{detail:{type:s,message:t}}))},[]);return{success:s=>o("success",s),error:s=>o("error",s),info:s=>o("info",s)}}export{n as u};

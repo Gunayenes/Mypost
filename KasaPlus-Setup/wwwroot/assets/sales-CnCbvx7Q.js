@@ -1,1 +1,0 @@
-import{a as e}from"./index-DvqeVeOS.js";const t={getAll:s=>e.get("/sales",{params:s}),getById:s=>e.get(`/sales/${s}`),create:s=>e.post("/sales",s),cancel:s=>e.post(`/sales/${s}/cancel`),return:s=>e.post(`/sales/${s}/return`)};export{t as s};
