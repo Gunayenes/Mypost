@@ -114,7 +114,7 @@ export default function ProductsPage() {
             {importing ? 'Yükleniyor...' : 'Excel İçe Aktar'}
           </button>
           <button
-            onClick={() => navigate('products/new', { relative: 'path' })}
+            onClick={() => navigate('new')}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition"
           >
             <Plus size={16} /> Yeni Ürün Ekle
@@ -244,7 +244,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{p.barcode}</td>
                     <td className="px-4 py-2.5">
                       <button
-                        onClick={() => navigate(`products/${p.id}/edit`, { relative: 'path' })}
+                        onClick={() => navigate(`${p.id}/edit`)}
                         className="font-medium text-gray-900 hover:text-blue-600 transition text-left"
                       >
                         {p.name}
@@ -271,7 +271,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-2.5 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => navigate(`products/${p.id}/edit`, { relative: 'path' })}
+                          onClick={() => navigate(`${p.id}/edit`)}
                           className="p-1.5 hover:bg-blue-50 rounded text-blue-500 transition"
                           title="Düzenle"
                         >
