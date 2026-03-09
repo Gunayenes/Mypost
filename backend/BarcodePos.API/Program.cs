@@ -89,11 +89,15 @@ try
     // ── Health Check ──
     builder.Services.AddHealthChecks();
 
-    // ── Railway / Cloud PORT desteği ──
+    // ── Cloud PORT desteği (Render/Railway) ──
+    // ConfigureKestrel en yüksek öncelik — appsettings Kestrel config'ini ezer
     var port = Environment.GetEnvironmentVariable("PORT");
     if (!string.IsNullOrEmpty(port))
     {
-        builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.ListenAnyIP(int.Parse(port));
+        });
     }
 
     var app = builder.Build();

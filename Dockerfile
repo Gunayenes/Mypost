@@ -45,7 +45,6 @@ ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/BarcodePos.db"
 ENV ConnectionStrings__LicenseConnection="Data Source=/app/data/licenses.db"
 ENV DISABLE_LICENSE_CHECK=true
 
-EXPOSE 8080
-ENV PORT=8080
+EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "BarcodePos.API.dll"]
