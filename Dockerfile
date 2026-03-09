@@ -14,6 +14,7 @@ RUN npm run build
 # ── Stage 2: Backend Build ──
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 WORKDIR /src
+COPY backend/Directory.Build.props ./
 COPY backend/BarcodePos.Domain/BarcodePos.Domain.csproj BarcodePos.Domain/
 COPY backend/BarcodePos.Application/BarcodePos.Application.csproj BarcodePos.Application/
 COPY backend/BarcodePos.Infrastructure/BarcodePos.Infrastructure.csproj BarcodePos.Infrastructure/
