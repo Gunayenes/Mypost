@@ -185,7 +185,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center gap-2"><Receipt size={18} /> Son Satışlar</h2>
-            <button onClick={() => navigate('/sales')} className="text-xs text-primary hover:underline">Tümünü Gör →</button>
+            <button onClick={() => navigate('sales')} className="text-xs text-primary hover:underline">Tümünü Gör →</button>
           </div>
           {(data.recentSales?.length ?? 0) > 0 ? (
             <div className="space-y-2">
