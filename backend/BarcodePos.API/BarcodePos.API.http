@@ -1,6 +1,193 @@
-@BarcodePos.API_HostAddress = http://localhost:5050
+@host = http://localhost:5050
+@token = {{login.response.body.$.data.token}}
 
-GET {{BarcodePos.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### ── Health Check ──
+GET {{host}}/health
 
-###
+### ── Test: Public Endpoint ──
+GET {{host}}/api/test/public
+
+### ══════════════════════════════════════
+### AUTH
+### ══════════════════════════════════════
+
+### Login (token almak için — önce bunu çalıştırın)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin123!"
+}
+
+### Şifre Değiştir
+POST {{host}}/api/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "currentPassword": "Admin123!",
+  "newPassword": "NewPass123!"
+}
+
+### ══════════════════════════════════════
+### USERS
+### ══════════════════════════════════════
+
+### Tüm Kullanıcıları Listele
+GET {{host}}/api/users
+Authorization: Bearer {{token}}
+
+### Kullanıcı Detayı (id değiştirin)
+GET {{host}}/api/users/1
+Authorization: Bearer {{token}}
+
+### Yeni Kullanıcı Oluştur
+POST {{host}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "kasiyer1",
+  "password": "Kasiyer123!",
+  "fullName": "Test Kasiyer",
+  "role": "Cashier"
+}
+
+### ══════════════════════════════════════
+### CATEGORIES
+### ══════════════════════════════════════
+
+### Tüm Kategorileri Listele
+GET {{host}}/api/categories
+Authorization: Bearer {{token}}
+
+### Yeni Kategori Oluştur
+POST {{host}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "İçecekler",
+  "description": "Soğuk ve sıcak içecekler"
+}
+
+### Kategori Güncelle (id değiştirin)
+PUT {{host}}/api/categories/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "İçecekler (Güncel)",
+  "description": "Tüm içecek çeşitleri"
+}
+
+### Kategori Sil
+DELETE {{host}}/api/categories/1
+Authorization: Bearer {{token}}
+
+### ══════════════════════════════════════
+### PRODUCTS
+### ══════════════════════════════════════
+
+### Tüm Ürünleri Listele
+GET {{host}}/api/products
+Authorization: Bearer {{token}}
+
+### Barkod ile Ürün Ara
+GET {{host}}/api/products/barcode/8690000000001
+Authorization: Bearer {{token}}
+
+### Yeni Ürün Oluştur
+POST {{host}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "barcode": "8690000000001",
+  "name": "Test Ürün",
+  "categoryId": 1,
+  "purchasePrice": 10.00,
+  "salePrice": 15.00,
+  "stockQuantity": 100
+}
+
+### ══════════════════════════════════════
+### CUSTOMERS
+### ══════════════════════════════════════
+
+### Tüm Müşterileri Listele
+GET {{host}}/api/customers
+Authorization: Bearer {{token}}
+
+### Yeni Müşteri Oluştur
+POST {{host}}/api/customers
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Ali Yılmaz",
+  "phone": "05551234567",
+  "email": "ali@example.com"
+}
+
+### ══════════════════════════════════════
+### SALES
+### ══════════════════════════════════════
+
+### Tüm Satışları Listele
+GET {{host}}/api/sales
+Authorization: Bearer {{token}}
+
+### Yeni Satış Oluştur
+POST {{host}}/api/sales
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "customerId": null,
+  "paymentType": "Cash",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+
+### ══════════════════════════════════════
+### STOCK MOVEMENTS
+### ══════════════════════════════════════
+
+### Stok Hareketlerini Listele
+GET {{host}}/api/stockmovements
+Authorization: Bearer {{token}}
+
+### Stok Girişi Yap
+POST {{host}}/api/stockmovements
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": 1,
+  "quantity": 50,
+  "movementType": "In",
+  "description": "Tedarikçiden alım"
+}
+
+### ══════════════════════════════════════
+### REPORTS & DASHBOARD
+### ══════════════════════════════════════
+
+### Dashboard Verileri
+GET {{host}}/api/dashboard
+Authorization: Bearer {{token}}
+
+### Satış Raporu
+GET {{host}}/api/reports/sales?startDate=2025-01-01&endDate=2025-12-31
+Authorization: Bearer {{token}}
+
+### Excel Export
+GET {{host}}/api/reports/sales/export?startDate=2025-01-01&endDate=2025-12-31
+Authorization: Bearer {{token}}

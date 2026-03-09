@@ -1,13 +1,21 @@
 {
-  "name": "barcode-pos-frontend",
+  "name": "kasaplus",
+  "productName": "KasaPlus",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "main": "electron.cjs",
+  "author": "BarcodePos",
+  "description": "BarcodePos — Barkodlu Satış Noktası Yönetim Sistemi",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.app.json tsconfig.node.json && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "tsc -b tsconfig.app.json tsconfig.node.json && vite build && electron-builder --win",
+    "electron:pack": "electron-builder --dir",
+    "electron:publish": "tsc -b tsconfig.app.json tsconfig.node.json && vite build && electron-builder --win --publish always"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -15,6 +23,7 @@
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
     "dexie": "^4.3.0",
+    "electron-updater": "^6.8.3",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -33,6 +42,7 @@
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "electron": "^40.8.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

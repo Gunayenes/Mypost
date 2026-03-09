@@ -1,307 +1,145 @@
-# Barcode POS System
+# BarcodePos — Barkodlu Satış Noktası Yönetim Sistemi
 
-A modern **barcode-based Point of Sale (POS) and inventory management system** designed for small and medium-sized retail stores.
+Küçük ve orta ölçekli işletmeler için geliştirilmiş, barkod okuyucu destekli modern POS (Point of Sale) sistemi.
 
-This project is built with **ASP.NET Core Clean Architecture** on the backend and **React + TypeScript** on the frontend.
-The system supports **fast cashier workflow, barcode scanning, stock management, customer credit tracking, and reporting**.
+## Teknolojiler
 
----
+### Backend
+- **.NET 10** — ASP.NET Core Web API
+- **Entity Framework Core** — SQL Server
+- **JWT Authentication** — Rol tabanlı yetkilendirme (Admin, Yönetici, Kasiyer)
+- **FluentValidation** — İstek doğrulama
+- **Serilog** — Yapılandırılmış loglama
+- **Clean Architecture** — Domain / Application / Infrastructure / API
 
-# Project Goals
+### Frontend
+- **React 19** + **TypeScript**
+- **Vite** — Build toolchain
+- **Tailwind CSS v4** — Utility-first styling
+- **Zustand** — State management
+- **Axios** — HTTP client
+- **Lucide React** — İkonlar
+- **Electron** — Masaüstü uygulama (opsiyonel)
 
-The goal of this project is to build a **production-ready POS system** with a clean architecture that can be extended to support:
+## Özellikler
 
-* multiple stores
-* online synchronization
-* device integrations
-* SaaS deployment
+| Modül | Açıklama |
+|-------|----------|
+| **POS Satış** | Barkod okutma, hızlı ürün arama, kategori butonları, F8/F9/F10 kısayolları |
+| **Ürün Yönetimi** | Barkod ile ekle/düzenle, kategori filtresi, stok takibi, KDV hesaplama |
+| **Stok Hareketleri** | Giriş/çıkış/düzeltme, satış & iade otomatik kayıt |
+| **Satış Takibi** | Fiş detayı, iptal, iade, ödeme tipi filtreleme |
+| **Müşteri Yönetimi** | Müşteri CRUD, veresiye bakiye takibi |
+| **Raporlar** | Tarih aralığı satış raporu, günlük kırılım, Excel export |
+| **Dashboard** | Bugünkü satış, haftalık trend, düşük stok uyarıları |
+| **Kullanıcılar** | Rol tabanlı erişim (Admin/Yönetici/Kasiyer), aktif/pasif yönetimi |
 
----
+## Kurulum
 
-# System Overview
+### Gereksinimler
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js 20+](https://nodejs.org/)
+- [SQL Server](https://www.microsoft.com/sql-server) (veya Docker ile)
 
-The system consists of four main parts:
+### 1. Veritabanı
 
-1. POS Application (Cashier screen)
-2. Admin Panel (Management dashboard)
-3. Backend API (Business logic and data access)
-4. Database and reporting layer
-
-```
-Admin Panel (React)
-       │
-       │ HTTP / JSON
-       ▼
-ASP.NET Core Web API
-       │
-       │ EF Core
-       ▼
-SQL Server Database
-       │
-       ▼
-Reports / Excel Export
-```
-
-Optional desktop deployment:
-
-```
-Electron Wrapper
-     │
-     ▼
-React POS Application
+```bash
+# Docker ile SQL Server (opsiyonel)
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=BarcodePos_Dev2025!" \
+  -p 1433:1433 --name barcodepos-db -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
----
+### 2. Backend
 
-# Tech Stack
+```bash
+cd backend/BarcodePos.API
 
-## Backend
+# Veritabanını oluştur
+dotnet ef database update --project ../BarcodePos.Infrastructure
 
-* ASP.NET Core Web API
-* Clean Architecture
-* Entity Framework Core
-* SQL Server
-* JWT Authentication
-* FluentValidation
-* AutoMapper
-
-## Frontend
-
-* React
-* TypeScript
-* TailwindCSS
-* Zustand
-* React Router
-* React Query
-
-## Desktop Support
-
-* Electron
-
----
-
-# Core Features
-
-## POS Sales
-
-* barcode scanning
-* fast cashier workflow
-* product search
-* cart system
-* multiple payment types
-
-Payment types supported:
-
-* Cash
-* Card
-* Credit (customer account)
-
----
-
-## Inventory Management
-
-* product catalog
-* product categories
-* stock quantity tracking
-* stock movement logs
-* minimum stock alerts
-
----
-
-## Customer Management
-
-Optional customer support for sales:
-
-* customer records
-* credit balance tracking
-* customer transaction history
-
----
-
-## Reporting
-
-The system provides business insights such as:
-
-* daily sales
-* top selling products
-* low stock products
-* profit calculations
-
-Reports can be exported to:
-
-* Excel
-
----
-
-# System Architecture
-
-The backend follows a **Clean Architecture** approach.
-
-```
-API Layer
-│
-├── Controllers
-├── Middleware
-└── Authentication
-
-Application Layer
-│
-├── Services
-├── DTOs
-├── Validators
-└── Use Cases
-
-Domain Layer
-│
-├── Entities
-├── Enums
-└── Core business rules
-
-Infrastructure Layer
-│
-├── EF Core
-├── DbContext
-├── Repositories
-└── External services
+# Çalıştır
+dotnet run
+# → http://localhost:5050
+# → Swagger: http://localhost:5050/swagger
 ```
 
----
+### 3. Frontend
 
-# Database Overview
-
-Main entities:
-
-```
-Store
- ├── Users
- ├── Products
- ├── Categories
- ├── Customers
- ├── Sales
- └── StockMovements
-
-Product
- ├── SaleItems
- └── StockMovements
-
-Sale
- ├── SaleItems
- └── Customer (optional)
-
-Customer
- └── CustomerTransactions
-```
-
----
-
-# Sales Workflow
-
-```
-Scan Barcode
-     │
-     ▼
-Product Found?
- ├─ No → show warning
- └─ Yes → add to cart
-            │
-            ▼
-Select Payment Type
-            │
-            ▼
-POST /api/sales
-            │
-            ▼
-Create Sale + SaleItems
-            │
-            ▼
-Decrease Product Stock
-            │
-            ▼
-Create StockMovement record
-            │
-            ▼
-Return receipt to frontend
-```
-
----
-
-# Project Structure
-
-```
-MyPost
-├── backend
-│   ├── BarcodePos.API
-│   ├── BarcodePos.Application
-│   ├── BarcodePos.Domain
-│   ├── BarcodePos.Infrastructure
-│   ├── BarcodePos.UnitTests
-│   ├── BarcodePos.IntegrationTests
-│   └── BarcodePos.slnx
-│
-├── frontend
-│   └── barcode-pos-frontend
-│
-├── docs
-│   ├── architecture
-│   ├── prompt-pack
-│   └── notes
-│
-├── reference
-│   ├── qpos
-│   ├── react-pos-management-system
-│   └── tgipos
-│
-└── tools
-```
-
----
-
-# Development Setup
-
-## Backend
-
-```
-cd backend
-dotnet build
-dotnet run --project BarcodePos.API
-```
-
-Swagger will be available at:
-
-```
-https://localhost:5001/swagger
-```
-
----
-
-## Frontend
-
-```
+```bash
 cd frontend/barcode-pos-frontend
+
 npm install
 npm run dev
+# → http://localhost:5173
 ```
----
 
-# Future Improvements
+### 4. Electron Masaüstü (opsiyonel)
 
-Planned improvements include:
+```bash
+# Geliştirme
+npm run electron:dev
 
-* multi-store support
-* advanced offline synchronization
-* payment terminal integration
-* receipt printer support
-* loyalty system
-* advanced analytics
+# Windows kurulum dosyası oluştur
+npm run electron:build
+# → electron-dist/ klasöründe .exe dosyası
+```
 
----
+## Varsayılan Giriş
 
-# License
+| Kullanıcı | Şifre | Rol |
+|-----------|-------|-----|
+| `admin` | `Admin123!` | Admin |
 
-This project is currently intended for **educational and prototype purposes**.
+## Proje Yapısı
 
----
+```
+├── backend/
+│   ├── BarcodePos.Domain/          # Entity'ler, Enum'lar
+│   ├── BarcodePos.Application/     # DTO'lar, Interface'ler, Validator'lar
+│   ├── BarcodePos.Infrastructure/  # EF Core, Service implementasyonları
+│   └── BarcodePos.API/             # Controller'lar, Middleware
+│
+├── frontend/barcode-pos-frontend/
+│   ├── src/
+│   │   ├── api/          # Axios API client'ları
+│   │   ├── components/   # Layout, UI bileşenleri
+│   │   ├── pages/        # Sayfa bileşenleri
+│   │   ├── store/        # Zustand store'ları
+│   │   └── types/        # TypeScript tip tanımları
+│   ├── electron.cjs      # Electron ana süreç
+│   └── electron-builder.json
+```
 
-# Author
+## Production Dağıtım
 
-Developed as a modular POS system architecture project.
+### Tek Sunucu (Backend + Frontend)
+
+```bash
+# 1. Frontend build
+cd frontend/barcode-pos-frontend
+npm run build
+
+# 2. Build çıktısını backend wwwroot'a kopyala
+cp -r dist/* ../backend/BarcodePos.API/wwwroot/
+
+# 3. Backend publish
+cd backend/BarcodePos.API
+dotnet publish -c Release -o ./publish
+
+# 4. Çalıştır
+cd publish
+ASPNETCORE_ENVIRONMENT=Production dotnet BarcodePos.API.dll
+```
+
+### Ortam Değişkenleri (Production)
+
+| Değişken | Açıklama |
+|----------|----------|
+| `ConnectionStrings__DefaultConnection` | SQL Server bağlantı dizesi |
+| `JwtSettings__Secret` | En az 32 karakter rastgele anahtar |
+| `AllowedOrigins` | Frontend URL (virgülle ayrılmış) |
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+
+## Lisans
+
+Bu proje özel kullanım içindir.

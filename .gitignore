@@ -25,3 +25,17 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Build / Deploy çıktıları
+BarcodePos-Setup/
+LicenseManager-App/
+frontend/barcode-pos-frontend/electron-dist/
+backend/BarcodePos.API/wwwroot/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Tools build
+tools/*/bin/
+tools/*/obj/

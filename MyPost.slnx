@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="BarkolduSatisveStokTakipYazilimi.md" />
+  </Folder>
   <Project Path="MyPost/MyPost.csproj" />
 </Solution>

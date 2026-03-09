@@ -1,0 +1,45 @@
+{
+  "appId": "com.kasaplus.app",
+  "productName": "KasaPlus",
+  "directories": {
+    "output": "electron-dist"
+  },
+  "files": [
+    "dist/**/*",
+    "electron.cjs",
+    "auto-updater.cjs",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "../../KasaPlus-Setup",
+      "to": "backend",
+      "filter": ["**/*", "!logs/**"]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "shortcutName": "KasaPlus",
+    "menuCategory": "KasaPlus",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "compression": "normal",
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "Gunayenes",
+      "repo": "Mypost",
+      "releaseType": "release"
+    }
+  ]
+}

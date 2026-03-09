@@ -1,0 +1,29 @@
+============================================
+  KasaPlus - Kurulum Kilavuzu
+============================================
+
+GEREKSINIMLER:
+  - Windows 10/11 (64-bit)
+  - Ek kurulum gerektirmez (SQLite + self-contained)
+
+KURULUM ADIMLARI:
+
+  1. Bu klasoru PC'ye kopyalayin
+     Ornek: C:\KasaPlus\
+
+  2. "Kur.bat" dosyasini YONETICI OLARAK calistirin
+     (Sag tikla > Yonetici olarak calistir)
+
+  3. Kurulum tamamlaninca "KasaPlus.bat" ile baslatabilirsiniz
+
+  4. Tarayicida otomatik acilir: http://localhost:5050
+
+  5. Lisans aktivasyonu icin gelistiriciyle iletisime gecin
+
+SORUN GIDERME:
+  - Port 5050 baska uygulama tarafindan kullaniliyor mu?
+  - Guvenlik duvari 5050 portunu engelliyor mu?
+
+DESTEK:
+  WhatsApp: 0542 746 0197
+============================================
