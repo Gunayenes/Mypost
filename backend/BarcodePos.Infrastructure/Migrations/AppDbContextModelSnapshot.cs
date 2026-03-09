@@ -733,6 +733,137 @@ namespace BarcodePos.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BarcodePos.Domain.Entities.Subscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("WebCustomerId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("WebCustomerId");
+
+                    b.ToTable("Subscriptions");
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.SubscriptionPlan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("HasBackup")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("HasReports")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("HasSupport")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MaxProducts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MaxUsers")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("SubscriptionPlans");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DurationDays = 14,
+                            HasBackup = false,
+                            HasReports = false,
+                            HasSupport = false,
+                            IsActive = true,
+                            MaxProducts = 50,
+                            MaxUsers = 1,
+                            Name = "Demo",
+                            Price = 0m,
+                            Slug = "demo"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DurationDays = 30,
+                            HasBackup = true,
+                            HasReports = true,
+                            HasSupport = true,
+                            IsActive = true,
+                            MaxProducts = 2147483647,
+                            MaxUsers = 3,
+                            Name = "Profesyonel",
+                            Price = 299m,
+                            Slug = "pro"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DurationDays = 365,
+                            HasBackup = true,
+                            HasReports = true,
+                            HasSupport = true,
+                            IsActive = true,
+                            MaxProducts = 2147483647,
+                            MaxUsers = 2147483647,
+                            Name = "Kurumsal",
+                            Price = 0m,
+                            Slug = "enterprise"
+                        });
+                });
+
             modelBuilder.Entity("BarcodePos.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -790,6 +921,79 @@ namespace BarcodePos.Infrastructure.Migrations
                             StoreId = 1,
                             Username = "admin"
                         });
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.WebCustomer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BusinessName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EmailConfirmExpiry")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmailConfirmToken")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PasswordResetExpiry")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("WebCustomers");
                 });
 
             modelBuilder.Entity("BarcodePos.Domain.Entities.Category", b =>
@@ -915,10 +1119,40 @@ namespace BarcodePos.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BarcodePos.Domain.Entities.Subscription", b =>
+                {
+                    b.HasOne("BarcodePos.Domain.Entities.SubscriptionPlan", "Plan")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BarcodePos.Domain.Entities.WebCustomer", "WebCustomer")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("WebCustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+
+                    b.Navigation("WebCustomer");
+                });
+
             modelBuilder.Entity("BarcodePos.Domain.Entities.User", b =>
                 {
                     b.HasOne("BarcodePos.Domain.Entities.Store", "Store")
                         .WithMany("Users")
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.WebCustomer", b =>
+                {
+                    b.HasOne("BarcodePos.Domain.Entities.Store", "Store")
+                        .WithMany()
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -965,11 +1199,21 @@ namespace BarcodePos.Infrastructure.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("BarcodePos.Domain.Entities.SubscriptionPlan", b =>
+                {
+                    b.Navigation("Subscriptions");
+                });
+
             modelBuilder.Entity("BarcodePos.Domain.Entities.User", b =>
                 {
                     b.Navigation("Sales");
 
                     b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.WebCustomer", b =>
+                {
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

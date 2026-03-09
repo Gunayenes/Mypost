@@ -2,6 +2,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuthStore } from '@/store/authStore';
 import { LogOut, User } from 'lucide-react';
+import { isElectron } from '@/utils/platform';
 
 export default function AppLayout() {
   const { user, logout } = useAuthStore();
@@ -9,7 +10,7 @@ export default function AppLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate(isElectron() ? '/login' : '/');
   };
 
   return (

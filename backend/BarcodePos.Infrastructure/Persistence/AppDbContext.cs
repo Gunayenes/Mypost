@@ -24,6 +24,11 @@ public class AppDbContext : DbContext
     public DbSet<CustomerTransaction> CustomerTransactions => Set<CustomerTransaction>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
 
+    // Web platform
+    public DbSet<WebCustomer> WebCustomers => Set<WebCustomer>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

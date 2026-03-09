@@ -13,9 +13,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "tsc -b tsconfig.app.json tsconfig.node.json && vite build && electron-builder --win",
-    "electron:pack": "electron-builder --dir",
-    "electron:publish": "tsc -b tsconfig.app.json tsconfig.node.json && vite build && electron-builder --win --publish always"
+    "electron:build": "tsc -b tsconfig.app.json tsconfig.node.json && vite build && electron-builder --win --config electron-builder.json",
+    "electron:pack": "electron-builder --dir --config electron-builder.json",
+    "electron:publish": "tsc -b tsconfig.app.json tsconfig.node.json && vite build && electron-builder --win --publish always --config electron-builder.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -24,6 +24,7 @@
     "clsx": "^2.1.1",
     "dexie": "^4.3.0",
     "electron-updater": "^6.8.3",
+    "framer-motion": "^12.35.1",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

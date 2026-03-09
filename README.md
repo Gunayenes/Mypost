@@ -1,12 +1,12 @@
-# BarcodePos — Barkodlu Satış Noktası Yönetim Sistemi
+# KasaPlus — Barkodlu Satış Noktası Yönetim Sistemi
 
-Küçük ve orta ölçekli işletmeler için geliştirilmiş, barkod okuyucu destekli modern POS (Point of Sale) sistemi.
+Küçük ve orta ölçekli işletmeler için geliştirilmiş, barkod okuyucu destekli modern POS (Point of Sale) sistemi. Masaüstü (Electron) ve web olarak çalışır.
 
 ## Teknolojiler
 
 ### Backend
 - **.NET 10** — ASP.NET Core Web API
-- **Entity Framework Core** — SQL Server
+- **Entity Framework Core + SQLite** — Sıfır kurulum veritabanı
 - **JWT Authentication** — Rol tabanlı yetkilendirme (Admin, Yönetici, Kasiyer)
 - **FluentValidation** — İstek doğrulama
 - **Serilog** — Yapılandırılmış loglama
@@ -14,15 +14,17 @@ Küçük ve orta ölçekli işletmeler için geliştirilmiş, barkod okuyucu des
 
 ### Frontend
 - **React 19** + **TypeScript**
-- **Vite** — Build toolchain
+- **Vite 7** — Build toolchain
 - **Tailwind CSS v4** — Utility-first styling
 - **Zustand** — State management
+- **React Query** — Server state
 - **Axios** — HTTP client
 - **Lucide React** — İkonlar
-- **Electron** — Masaüstü uygulama (opsiyonel)
+- **Electron 40** — Masaüstü uygulama
 
 ## Özellikler
 
+### POS Uygulaması
 | Modül | Açıklama |
 |-------|----------|
 | **POS Satış** | Barkod okutma, hızlı ürün arama, kategori butonları, F8/F9/F10 kısayolları |
@@ -32,38 +34,35 @@ Küçük ve orta ölçekli işletmeler için geliştirilmiş, barkod okuyucu des
 | **Müşteri Yönetimi** | Müşteri CRUD, veresiye bakiye takibi |
 | **Raporlar** | Tarih aralığı satış raporu, günlük kırılım, Excel export |
 | **Dashboard** | Bugünkü satış, haftalık trend, düşük stok uyarıları |
-| **Kullanıcılar** | Rol tabanlı erişim (Admin/Yönetici/Kasiyer), aktif/pasif yönetimi |
+| **Kullanıcılar** | Rol tabanlı erişim (Admin/Yönetici/Kasiyer) |
+| **Yedekleme** | Veritabanı yedek al/geri yükle |
+
+### Web Platform
+| Modül | Açıklama |
+|-------|----------|
+| **Tanıtım Sitesi** | Ana sayfa, özellikler, fiyatlandırma, iletişim |
+| **Online Kayıt** | İşletme kaydı + otomatik deneme aboneliği |
+| **Site Admin Paneli** | Müşteri/abonelik/lisans yönetimi |
+| **Lisans Yönetimi** | Lisans üretme, yenileme, WhatsApp ile gönderme |
 
 ## Kurulum
 
 ### Gereksinimler
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Node.js 20+](https://nodejs.org/)
-- [SQL Server](https://www.microsoft.com/sql-server) (veya Docker ile)
 
-### 1. Veritabanı
-
-```bash
-# Docker ile SQL Server (opsiyonel)
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=BarcodePos_Dev2025!" \
-  -p 1433:1433 --name barcodepos-db -d mcr.microsoft.com/mssql/server:2022-latest
-```
-
-### 2. Backend
+### 1. Backend
 
 ```bash
 cd backend/BarcodePos.API
 
-# Veritabanını oluştur
-dotnet ef database update --project ../BarcodePos.Infrastructure
-
-# Çalıştır
+# Çalıştır (SQLite — ek kurulum gerekmez)
 dotnet run
 # → http://localhost:5050
 # → Swagger: http://localhost:5050/swagger
 ```
 
-### 3. Frontend
+### 2. Frontend
 
 ```bash
 cd frontend/barcode-pos-frontend
@@ -73,15 +72,18 @@ npm run dev
 # → http://localhost:5173
 ```
 
-### 4. Electron Masaüstü (opsiyonel)
+### 3. Electron Masaüstü (opsiyonel)
 
 ```bash
+cd frontend/barcode-pos-frontend
+
 # Geliştirme
 npm run electron:dev
 
 # Windows kurulum dosyası oluştur
-npm run electron:build
-# → electron-dist/ klasöründe .exe dosyası
+./deploy.ps1             # Backend publish
+./deploy-desktop.ps1     # Electron installer
+# → electron-dist/ klasöründe Setup .exe
 ```
 
 ## Varsayılan Giriş
@@ -89,6 +91,8 @@ npm run electron:build
 | Kullanıcı | Şifre | Rol |
 |-----------|-------|-----|
 | `admin` | `Admin123!` | Admin |
+
+**Site Admin:** `appsettings.json` → `SiteAdmin` bölümünden yapılandırılır.
 
 ## Proje Yapısı
 
@@ -101,43 +105,44 @@ npm run electron:build
 │
 ├── frontend/barcode-pos-frontend/
 │   ├── src/
-│   │   ├── api/          # Axios API client'ları
-│   │   ├── components/   # Layout, UI bileşenleri
-│   │   ├── pages/        # Sayfa bileşenleri
-│   │   ├── store/        # Zustand store'ları
-│   │   └── types/        # TypeScript tip tanımları
-│   ├── electron.cjs      # Electron ana süreç
-│   └── electron-builder.json
+│   │   ├── api/           # Axios API client'ları
+│   │   ├── components/    # Layout, UI, Public, SiteAdmin
+│   │   ├── pages/         # POS, Public, SiteAdmin sayfaları
+│   │   ├── store/         # Zustand store'ları
+│   │   ├── types/         # TypeScript tip tanımları
+│   │   └── utils/         # Yardımcı fonksiyonlar
+│   ├── electron.cjs       # Electron ana süreç
+│   ├── preload.cjs        # Electron preload
+│   └── auto-updater.cjs   # GitHub Releases otomatik güncelleme
+│
+├── tools/
+│   └── LicenseManager/    # Bağımsız lisans yönetim aracı
+│
+├── deploy.ps1             # Backend + Frontend dağıtım paketi
+└── deploy-desktop.ps1     # Electron masaüstü installer
 ```
 
 ## Production Dağıtım
 
-### Tek Sunucu (Backend + Frontend)
+### Otomatik Dağıtım (Önerilen)
 
-```bash
-# 1. Frontend build
-cd frontend/barcode-pos-frontend
-npm run build
+```powershell
+# 1. Backend publish + frontend build
+./deploy.ps1
+# → KasaPlus-Setup/ klasörü oluşur
 
-# 2. Build çıktısını backend wwwroot'a kopyala
-cp -r dist/* ../backend/BarcodePos.API/wwwroot/
-
-# 3. Backend publish
-cd backend/BarcodePos.API
-dotnet publish -c Release -o ./publish
-
-# 4. Çalıştır
-cd publish
-ASPNETCORE_ENVIRONMENT=Production dotnet BarcodePos.API.dll
+# 2. Masaüstü installer (opsiyonel)
+./deploy-desktop.ps1
+# → electron-dist/ klasöründe Setup .exe
 ```
 
 ### Ortam Değişkenleri (Production)
 
 | Değişken | Açıklama |
 |----------|----------|
-| `ConnectionStrings__DefaultConnection` | SQL Server bağlantı dizesi |
 | `JwtSettings__Secret` | En az 32 karakter rastgele anahtar |
-| `AllowedOrigins` | Frontend URL (virgülle ayrılmış) |
+| `SiteAdmin__Email` | Site admin e-posta |
+| `SiteAdmin__Password` | Site admin şifre |
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 
 ## Lisans

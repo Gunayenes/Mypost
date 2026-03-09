@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
+import { Link } from 'react-router-dom';
 import { ScanBarcode, Eye, EyeOff } from 'lucide-react';
+import { isElectron } from '@/utils/platform';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -21,7 +23,7 @@ export default function LoginPage() {
       const { data: res } = await authApi.login({ username, password });
       if (res.success && res.data) {
         login(res.data);
-        navigate('/');
+        navigate(isElectron() ? '/' : '/app');
       } else {
         setError(res.message ?? 'Giriş başarısız.');
       }
@@ -60,7 +62,7 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
-              placeholder="admin"
+              placeholder="Kullanıcı adı girin"
               required
             />
           </div>
@@ -96,6 +98,15 @@ export default function LoginPage() {
             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </button>
         </form>
+
+        {!isElectron() && (
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Hesabınız yok mu?{' '}
+            <Link to="/kayit" className="text-primary-600 font-medium hover:underline">
+              Ücretsiz Kaydolun
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

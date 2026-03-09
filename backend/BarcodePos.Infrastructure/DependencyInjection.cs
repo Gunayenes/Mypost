@@ -21,6 +21,11 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite(connectionString));
 
+        // EF Core — License DB (LicenseManager ile paylaşılır)
+        var licenseConnection = configuration.GetConnectionString("LicenseConnection") ?? "Data Source=licenses.db";
+        services.AddDbContext<LicenseDbContext>(options =>
+            options.UseSqlite(licenseConnection));
+
         // Repository ve UnitOfWork
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -52,6 +57,12 @@ public static class DependencyInjection
 
         // Backup servisi
         services.AddScoped<IBackupService, BackupService>();
+
+        // Web auth servisi
+        services.AddScoped<IWebAuthService, WebAuthService>();
+
+        // Site admin servisi
+        services.AddScoped<ISiteAdminService, SiteAdminService>();
 
         return services;
     }

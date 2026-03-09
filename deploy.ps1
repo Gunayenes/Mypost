@@ -44,6 +44,13 @@ if ($LASTEXITCODE -ne 0) { Write-Host "HATA: Backend publish basarisiz!" -Foregr
 Pop-Location
 Write-Host "  Backend publish tamamlandi." -ForegroundColor Green
 
+# ── 4b. Mevcut licenses.db varsa kopyala (urun veri koruma) ──
+$licenseDbSrc = "$BACKEND\licenses.db"
+if (Test-Path $licenseDbSrc) {
+    Copy-Item $licenseDbSrc "$OUTPUT\licenses.db" -Force
+    Write-Host "  licenses.db kopyalandi." -ForegroundColor Green
+}
+
 # ── 5. Başlatma scriptleri oluştur ──
 Write-Host "[5/5] Baslat scripti olusturuluyor..." -ForegroundColor Yellow
 

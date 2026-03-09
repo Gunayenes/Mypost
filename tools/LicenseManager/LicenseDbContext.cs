@@ -18,6 +18,7 @@ public class LicenseRecord
     public string Phone { get; set; } = string.Empty;
     public string Note { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
     public string LicenseKey { get; set; } = string.Empty;
     public int DurationDays { get; set; }
     public DateTime IssuedAt { get; set; }

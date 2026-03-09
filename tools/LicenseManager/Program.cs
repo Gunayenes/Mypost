@@ -30,6 +30,7 @@ app.MapGet("/api/licenses", async (LicenseDbContext db) =>
         l.Phone,
         l.Note,
         l.Username,
+        l.Password,
         l.DurationDays,
         l.IssuedAt,
         l.ExpiresAt,
@@ -77,6 +78,7 @@ app.MapPost("/api/licenses", async (LicenseDbContext db, CreateLicenseRequest re
         Phone = req.Phone?.Trim() ?? "",
         Note = req.Note?.Trim() ?? "",
         Username = req.Username.Trim(),
+        Password = req.Password.Trim(),
         LicenseKey = licenseKey,
         DurationDays = days,
         IssuedAt = DateTime.UtcNow,
@@ -99,6 +101,7 @@ app.MapPost("/api/licenses/{id}/renew", async (LicenseDbContext db, int id, Rene
     var expiresAt = DateTime.UtcNow.AddDays(days);
     var newKey = LicenseService.GenerateLicenseKey(license.MachineId, license.CustomerName, expiresAt, license.Username, req.Password ?? "Pos123!");
 
+    license.Password = req.Password ?? "Pos123!";
     license.LicenseKey = newKey;
     license.DurationDays = days;
     license.ExpiresAt = expiresAt;
@@ -188,6 +191,7 @@ static class Html
         <tr>
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Müşteri</th>
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Kullanıcı</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Şifre</th>
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Telefon</th>
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Makine ID</th>
           <th class="text-center px-4 py-3 font-semibold text-gray-600">Süre</th>
@@ -338,6 +342,7 @@ function renderTable(licenses) {
     <tr class="border-b border-gray-100 hover:bg-gray-50">
       <td class="px-4 py-3 font-medium">${l.customerName}</td>
       <td class="px-4 py-3 font-mono text-xs text-blue-600 font-semibold">${l.username || '—'}</td>
+      <td class="px-4 py-3 font-mono text-xs text-purple-600">${l.password || '—'}</td>
       <td class="px-4 py-3 text-gray-500">${l.phone || '—'}</td>
       <td class="px-4 py-3 font-mono text-xs text-gray-500">${l.machineId.substring(0,12)}...</td>
       <td class="px-4 py-3 text-center text-gray-500">${l.durationDays}g</td>

@@ -1,0 +1,83 @@
+import axios from 'axios';
+import type { ApiResult, PagedData } from '@/types';
+import type {
+  SiteAdminLoginRequest,
+  SiteAdminLoginResponse,
+  SiteAdminDashboard,
+  SiteAdminCustomerListItem,
+  SiteAdminCustomerDetail,
+  SiteAdminSubscriptionItem,
+  LicenseListItem,
+  LicenseStats,
+  CreateLicenseRequest,
+  RenewLicenseRequest,
+} from '@/types/siteAdmin';
+
+const siteApi = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+siteApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('site_admin_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+siteApi.interceptors.response.use(
+  (r) => r,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('site_admin_token');
+      window.location.href = '/site-admin/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const siteAdminApi = {
+  login: (data: SiteAdminLoginRequest) =>
+    siteApi.post<ApiResult<SiteAdminLoginResponse>>('/site-admin/login', data),
+
+  getDashboard: () =>
+    siteApi.get<ApiResult<SiteAdminDashboard>>('/site-admin/dashboard'),
+
+  getCustomers: (params: { search?: string; page?: number; pageSize?: number }) =>
+    siteApi.get<ApiResult<PagedData<SiteAdminCustomerListItem>>>('/site-admin/customers', { params }),
+
+  getCustomerDetail: (id: number) =>
+    siteApi.get<ApiResult<SiteAdminCustomerDetail>>(`/site-admin/customers/${id}`),
+
+  toggleCustomerActive: (id: number) =>
+    siteApi.patch<ApiResult<void>>(`/site-admin/customers/${id}/toggle-active`),
+
+  getSubscriptions: (params: { filter?: string; page?: number; pageSize?: number }) =>
+    siteApi.get<ApiResult<PagedData<SiteAdminSubscriptionItem>>>('/site-admin/subscriptions', { params }),
+
+  extendSubscription: (id: number, days: number) =>
+    siteApi.patch<ApiResult<void>>(`/site-admin/subscriptions/${id}/extend`, { days }),
+
+  cancelSubscription: (id: number) =>
+    siteApi.patch<ApiResult<void>>(`/site-admin/subscriptions/${id}/cancel`),
+
+  // ── License Management ──
+  getLicenseStats: () =>
+    siteApi.get<ApiResult<LicenseStats>>('/site-admin/licenses/stats'),
+
+  getLicenses: () =>
+    siteApi.get<ApiResult<LicenseListItem[]>>('/site-admin/licenses'),
+
+  createLicense: (data: CreateLicenseRequest) =>
+    siteApi.post<ApiResult<{ licenseKey: string; id: number }>>('/site-admin/licenses', data),
+
+  renewLicense: (id: number, data: RenewLicenseRequest) =>
+    siteApi.post<ApiResult<{ licenseKey: string }>>(`/site-admin/licenses/${id}/renew`, data),
+
+  toggleLicense: (id: number) =>
+    siteApi.post<ApiResult<{ isActive: boolean }>>(`/site-admin/licenses/${id}/toggle`),
+
+  deleteLicense: (id: number) =>
+    siteApi.delete<ApiResult<void>>(`/site-admin/licenses/${id}`),
+};

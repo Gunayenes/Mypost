@@ -247,6 +247,30 @@ export interface RecentSale {
   itemCount: number;
 }
 
+// ── Web Auth (Kayıt / Giriş) ──
+export interface WebRegisterRequest {
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+export interface WebLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface WebLoginResponse {
+  token: string;
+  customerId: number;
+  email: string;
+  fullName: string;
+  businessName: string;
+  expiresAt: string;
+}
+
 // ── Cart (POS local state) ──
 export interface CartItem {
   productId: number;

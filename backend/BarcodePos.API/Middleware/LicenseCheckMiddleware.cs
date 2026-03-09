@@ -29,7 +29,7 @@ public class LicenseCheckMiddleware
         var path = context.Request.Path.Value?.ToLower() ?? "";
 
         // Lisans ve health endpoint'leri kontrolden muaf
-        if (path.StartsWith("/api/license") || path.StartsWith("/health") || path == "/")
+        if (path.StartsWith("/api/license") || path.StartsWith("/api/web") || path.StartsWith("/api/site-admin") || path.StartsWith("/health") || path == "/")
         {
             await _next(context);
             return;

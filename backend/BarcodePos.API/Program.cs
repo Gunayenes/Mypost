@@ -91,6 +91,13 @@ try
 
     var app = builder.Build();
 
+    // ── License DB — her zaman EnsureCreated (migration kullanmaz) ──
+    {
+        using var initScope = app.Services.CreateScope();
+        var licenseDb = initScope.ServiceProvider.GetRequiredService<BarcodePos.Infrastructure.Persistence.LicenseDbContext>();
+        licenseDb.Database.EnsureCreated();
+    }
+
     // ── Otomatik Migration (--migrate argümanı veya Production ilk çalıştırma) ──
     if (args.Contains("--migrate") || !app.Environment.IsDevelopment())
     {
