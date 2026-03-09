@@ -61,6 +61,7 @@ export default function SalesPage() {
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Fiş No</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Tarih</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Kasiyer</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Ürünler</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Ödeme</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Durum</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Tutar</th>
@@ -75,6 +76,7 @@ export default function SalesPage() {
                     <td className="px-4 py-3 font-mono text-xs">{s.receiptNumber}</td>
                     <td className="px-4 py-3 text-gray-500">{new Date(s.saleDate).toLocaleString('tr-TR')}</td>
                     <td className="px-4 py-3">{s.cashierName}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate" title={s.itemsSummary}>{s.itemsSummary || '—'}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{s.paymentTypeName}</span>
                     </td>
@@ -120,7 +122,7 @@ export default function SalesPage() {
                 );
               })}
               {sales.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Satış bulunamadı.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Satış bulunamadı.</td></tr>
               )}
             </tbody>
           </table>

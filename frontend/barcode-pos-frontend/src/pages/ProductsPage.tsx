@@ -26,7 +26,7 @@ export default function ProductsPage() {
   const load = () => {
     setLoading(true);
     Promise.all([
-      productsApi.getAll({ search: search || undefined, categoryId: filterCategory || undefined, pageSize: 100 }),
+      productsApi.getAll({ search: search || undefined, categoryId: filterCategory || undefined, isActive: true, pageSize: 100 }),
       categoriesApi.getAll(),
     ]).then(([pRes, cRes]) => {
       if (pRes.data.success) setProducts(pRes.data.data?.items ?? []);
@@ -114,7 +114,7 @@ export default function ProductsPage() {
             {importing ? 'Yükleniyor...' : 'Excel İçe Aktar'}
           </button>
           <button
-            onClick={() => navigate('/products/new')}
+            onClick={() => navigate('products/new', { relative: 'path' })}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition"
           >
             <Plus size={16} /> Yeni Ürün Ekle
@@ -244,7 +244,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{p.barcode}</td>
                     <td className="px-4 py-2.5">
                       <button
-                        onClick={() => navigate(`/products/${p.id}/edit`)}
+                        onClick={() => navigate(`products/${p.id}/edit`, { relative: 'path' })}
                         className="font-medium text-gray-900 hover:text-blue-600 transition text-left"
                       >
                         {p.name}
@@ -271,7 +271,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-2.5 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => navigate(`/products/${p.id}/edit`)}
+                          onClick={() => navigate(`products/${p.id}/edit`, { relative: 'path' })}
                           className="p-1.5 hover:bg-blue-50 rounded text-blue-500 transition"
                           title="Düzenle"
                         >

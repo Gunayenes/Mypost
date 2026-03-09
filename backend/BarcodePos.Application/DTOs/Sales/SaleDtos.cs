@@ -55,6 +55,8 @@ public class SaleListDto
     public string StatusName { get; set; } = string.Empty;
     public string CashierName { get; set; } = string.Empty;
     public string? CustomerName { get; set; }
+    public string ItemsSummary { get; set; } = string.Empty;
+    public int ItemCount { get; set; }
 }
 
 public class SaleListFilter

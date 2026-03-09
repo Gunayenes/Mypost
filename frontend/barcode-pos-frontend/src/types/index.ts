@@ -146,6 +146,8 @@ export interface SaleListItem {
   statusName: string;
   cashierName: string;
   customerName?: string;
+  itemsSummary: string;
+  itemCount: number;
 }
 
 export interface SaleDetail {

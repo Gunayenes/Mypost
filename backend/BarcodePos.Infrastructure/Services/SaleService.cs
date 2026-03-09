@@ -198,6 +198,7 @@ public class SaleService : ISaleService
             .AsNoTracking()
             .Include(s => s.User)
             .Include(s => s.Customer)
+            .Include(s => s.Items).ThenInclude(i => i.Product)
             .Where(s => s.StoreId == storeId);
 
         if (filter.DateFrom.HasValue)
@@ -226,7 +227,10 @@ public class SaleService : ISaleService
                 PaymentTypeName = MapPaymentTypeName(s.PaymentType),
                 StatusName = MapStatusName(s.Status),
                 CashierName = s.User.FullName,
-                CustomerName = s.Customer != null ? s.Customer.FullName : null
+                CustomerName = s.Customer != null ? s.Customer.FullName : null,
+                ItemCount = s.Items.Count,
+                ItemsSummary = string.Join(", ", s.Items.Select(i => i.Product.Name).Take(3))
+                    + (s.Items.Count > 3 ? $" +{s.Items.Count - 3}" : "")
             })
             .ToListAsync();
 
