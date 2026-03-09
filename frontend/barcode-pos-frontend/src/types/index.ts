@@ -247,6 +247,7 @@ export interface RecentSale {
   statusName: string;
   customerName?: string;
   itemCount: number;
+  itemsSummary: string;
 }
 
 // ── Web Auth (Kayıt / Giriş) ──

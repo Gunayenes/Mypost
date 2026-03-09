@@ -192,7 +192,7 @@ export default function DashboardPage() {
               {data.recentSales.map((sale) => (
                 <div key={sale.id}
                   className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition cursor-pointer"
-                  onClick={() => navigate(`/sales`)}
+                  onClick={() => navigate('sales')}
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-50 rounded-lg">
@@ -211,6 +211,9 @@ export default function DashboardPage() {
                         <span>{sale.itemCount} ürün</span>
                         {sale.customerName && <><span>·</span><span>{sale.customerName}</span></>}
                       </div>
+                      {sale.itemsSummary && (
+                        <p className="text-[11px] text-gray-500 mt-0.5 truncate max-w-[300px]">{sale.itemsSummary}</p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">

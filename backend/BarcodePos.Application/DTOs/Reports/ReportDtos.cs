@@ -140,4 +140,5 @@ public class RecentSaleDto
     public string StatusName { get; set; } = string.Empty;
     public string? CustomerName { get; set; }
     public int ItemCount { get; set; }
+    public string ItemsSummary { get; set; } = string.Empty;
 }

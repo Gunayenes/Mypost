@@ -322,27 +322,41 @@ public class ReportService : IReportService
         }).ToList();
 
         // Son 10 satış
-        var recentSales = await _context.Sales.AsNoTracking()
+        var rawRecentSales = await _context.Sales.AsNoTracking()
             .Include(s => s.Customer)
-            .Include(s => s.Items)
+            .Include(s => s.Items).ThenInclude(i => i.Product)
             .Where(s => s.StoreId == storeId)
             .OrderByDescending(s => s.SaleDate)
             .Take(10)
-            .Select(s => new RecentSaleDto
+            .Select(s => new
             {
-                Id = s.Id,
-                ReceiptNumber = s.ReceiptNumber,
-                SaleDate = s.SaleDate,
-                GrandTotal = s.GrandTotal,
-                PaymentTypeName = s.PaymentType == PaymentType.Nakit ? "Nakit"
-                    : s.PaymentType == PaymentType.Kart ? "Kart"
-                    : s.PaymentType == PaymentType.Veresiye ? "Veresiye" : s.PaymentType.ToString(),
-                StatusName = s.Status == SaleStatus.Tamamlandi ? "Tamamlandı"
-                    : s.Status == SaleStatus.Iptal ? "İptal" : "İade",
+                s.Id,
+                s.ReceiptNumber,
+                s.SaleDate,
+                s.GrandTotal,
+                s.PaymentType,
+                s.Status,
                 CustomerName = s.Customer != null ? s.Customer.FullName : null,
-                ItemCount = s.Items.Count
+                ItemNames = s.Items.Select(i => i.Product.Name).ToList()
             })
             .ToListAsync();
+
+        var recentSales = rawRecentSales.Select(s => new RecentSaleDto
+        {
+            Id = s.Id,
+            ReceiptNumber = s.ReceiptNumber,
+            SaleDate = s.SaleDate,
+            GrandTotal = s.GrandTotal,
+            PaymentTypeName = s.PaymentType == PaymentType.Nakit ? "Nakit"
+                : s.PaymentType == PaymentType.Kart ? "Kart"
+                : s.PaymentType == PaymentType.Veresiye ? "Veresiye" : s.PaymentType.ToString(),
+            StatusName = s.Status == SaleStatus.Tamamlandi ? "Tamamlandı"
+                : s.Status == SaleStatus.Iptal ? "İptal" : "İade",
+            CustomerName = s.CustomerName,
+            ItemCount = s.ItemNames.Count,
+            ItemsSummary = string.Join(", ", s.ItemNames.Take(3))
+                + (s.ItemNames.Count > 3 ? $" +{s.ItemNames.Count - 3}" : "")
+        }).ToList();
 
         return Result<DashboardSummaryDto>.Ok(new DashboardSummaryDto
         {

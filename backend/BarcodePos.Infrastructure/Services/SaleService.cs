@@ -214,25 +214,38 @@ public class SaleService : ISaleService
 
         var totalCount = await query.CountAsync();
 
-        var items = await query
+        var rawItems = await query
             .OrderByDescending(s => s.SaleDate)
             .Skip((filter.Page - 1) * filter.PageSize)
             .Take(filter.PageSize)
-            .Select(s => new SaleListDto
+            .Select(s => new
             {
-                Id = s.Id,
-                ReceiptNumber = s.ReceiptNumber,
-                SaleDate = s.SaleDate,
-                GrandTotal = s.GrandTotal,
-                PaymentTypeName = MapPaymentTypeName(s.PaymentType),
-                StatusName = MapStatusName(s.Status),
+                s.Id,
+                s.ReceiptNumber,
+                s.SaleDate,
+                s.GrandTotal,
+                s.PaymentType,
+                s.Status,
                 CashierName = s.User.FullName,
                 CustomerName = s.Customer != null ? s.Customer.FullName : null,
-                ItemCount = s.Items.Count,
-                ItemsSummary = string.Join(", ", s.Items.Select(i => i.Product.Name).Take(3))
-                    + (s.Items.Count > 3 ? $" +{s.Items.Count - 3}" : "")
+                ItemNames = s.Items.Select(i => i.Product.Name).ToList()
             })
             .ToListAsync();
+
+        var items = rawItems.Select(s => new SaleListDto
+        {
+            Id = s.Id,
+            ReceiptNumber = s.ReceiptNumber,
+            SaleDate = s.SaleDate,
+            GrandTotal = s.GrandTotal,
+            PaymentTypeName = MapPaymentTypeName(s.PaymentType),
+            StatusName = MapStatusName(s.Status),
+            CashierName = s.CashierName,
+            CustomerName = s.CustomerName,
+            ItemCount = s.ItemNames.Count,
+            ItemsSummary = string.Join(", ", s.ItemNames.Take(3))
+                + (s.ItemNames.Count > 3 ? $" +{s.ItemNames.Count - 3}" : "")
+        }).ToList();
 
         return Result<PagedResult<SaleListDto>>.Ok(
             PagedResult<SaleListDto>.Create(items, totalCount, filter.Page, filter.PageSize));
