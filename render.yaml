@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: kasaplus
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: frankfurt
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DISABLE_LICENSE_CHECK
+        value: "true"
+      - key: ConnectionStrings__DefaultConnection
+        value: "Data Source=/app/data/BarcodePos.db"
+      - key: ConnectionStrings__LicenseConnection
+        value: "Data Source=/app/data/licenses.db"
+      - key: JwtSettings__Secret
+        sync: false
+      - key: SiteAdmin__Email
+        sync: false
+      - key: SiteAdmin__Password
+        sync: false
