@@ -78,7 +78,7 @@ public class SaleService : ISaleService
 
                 var lineGross = product.SalePrice * item.Quantity;
                 var lineNet = lineGross - item.DiscountAmount;
-                var lineTax = lineNet * product.TaxRate;
+                var lineTax = lineNet * (product.TaxRate / 100m);
                 var lineTotal = lineNet;
 
                 subTotal += lineGross;
