@@ -33,7 +33,7 @@ const plans: Plan[] = [
   },
   {
     name: 'Profesyonel',
-    price: '299₺',
+    price: '599₺',
     period: '/ay',
     desc: 'Büyüyen işletmeler için',
     popular: true,
