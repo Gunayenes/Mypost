@@ -97,6 +97,12 @@ export default function POSPage() {
 
   // Barkod / arama
   const handleBarcodeScan = async (value?: string) => {
+    // Bekleyen otomatik tarama zamanlayıcısını temizle (çift tetiklenmeyi önle)
+    if (scanTimerRef.current) {
+      clearTimeout(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+
     const code = (value ?? barcode).trim();
     if (!code) return;
     setError('');
