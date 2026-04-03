@@ -4,6 +4,7 @@ using BarcodePos.Infrastructure.Persistence;
 using BarcodePos.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace BarcodePos.API.Controllers;
@@ -23,6 +24,7 @@ public class SiteAdminController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] SiteAdminLoginRequest request)
     {
         var result = await _siteAdminService.LoginAsync(request);
@@ -50,6 +52,16 @@ public class SiteAdminController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("customers")]
+    [Authorize(Roles = "SiteAdmin")]
+    public async Task<IActionResult> CreateCustomer([FromBody] CreateSiteAdminCustomerRequest request)
+    {
+        var result = await _siteAdminService.CreateCustomerAsync(request);
+        if (!result.Success)
+            return BadRequest(new { success = false, message = result.Message });
+        return Ok(result);
+    }
+
     [HttpGet("customers/{id}")]
     [Authorize(Roles = "SiteAdmin")]
     public async Task<IActionResult> GetCustomerDetail(int id)
@@ -65,6 +77,44 @@ public class SiteAdminController : ControllerBase
     public async Task<IActionResult> ToggleCustomerActive(int id)
     {
         var result = await _siteAdminService.ToggleCustomerActiveAsync(id);
+        if (!result.Success)
+            return NotFound(new { success = false, message = result.Message });
+        return Ok(result);
+    }
+
+    [HttpPut("customers/{id}")]
+    [Authorize(Roles = "SiteAdmin")]
+    public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateSiteAdminCustomerRequest request)
+    {
+        var result = await _siteAdminService.UpdateCustomerAsync(id, request);
+        if (!result.Success)
+            return BadRequest(new { success = false, message = result.Message });
+        return Ok(result);
+    }
+
+    [HttpPost("customers/{id}/reset-password")]
+    [Authorize(Roles = "SiteAdmin")]
+    public async Task<IActionResult> ResetCustomerPassword(int id, [FromBody] ResetCustomerPasswordRequest request)
+    {
+        var result = await _siteAdminService.ResetCustomerPasswordAsync(id, request.NewPassword);
+        if (!result.Success)
+            return BadRequest(new { success = false, message = result.Message });
+        return Ok(result);
+    }
+
+    [HttpGet("password-reset-requests")]
+    [Authorize(Roles = "SiteAdmin")]
+    public async Task<IActionResult> GetPasswordResetRequests()
+    {
+        var result = await _siteAdminService.GetPasswordResetRequestsAsync();
+        return Ok(result);
+    }
+
+    [HttpDelete("password-reset-requests/{customerId}")]
+    [Authorize(Roles = "SiteAdmin")]
+    public async Task<IActionResult> DismissPasswordResetRequest(int customerId)
+    {
+        var result = await _siteAdminService.DismissPasswordResetRequestAsync(customerId);
         if (!result.Success)
             return NotFound(new { success = false, message = result.Message });
         return Ok(result);
@@ -111,14 +161,18 @@ public class SiteAdminController : ControllerBase
     {
         var now = DateTime.UtcNow;
         var all = await _licenseDb.Licenses.ToListAsync();
-        return Ok(new { success = true, data = new LicenseStatsResponse
+        return Ok(new
         {
-            Total = all.Count,
-            Active = all.Count(l => l.IsActive && l.ExpiresAt >= now),
-            ExpiringSoon = all.Count(l => l.IsActive && l.ExpiresAt >= now && l.ExpiresAt < now.AddDays(30)),
-            Expired = all.Count(l => l.IsActive && l.ExpiresAt < now),
-            Inactive = all.Count(l => !l.IsActive),
-        }});
+            success = true,
+            data = new LicenseStatsResponse
+            {
+                Total = all.Count,
+                Active = all.Count(l => l.IsActive && l.ExpiresAt >= now),
+                ExpiringSoon = all.Count(l => l.IsActive && l.ExpiresAt >= now && l.ExpiresAt < now.AddDays(30)),
+                Expired = all.Count(l => l.IsActive && l.ExpiresAt < now),
+                Inactive = all.Count(l => !l.IsActive),
+            }
+        });
     }
 
     [HttpGet("licenses")]
@@ -192,7 +246,7 @@ public class SiteAdminController : ControllerBase
 
         var days = req.DurationDays > 0 ? req.DurationDays : 365;
         var expiresAt = DateTime.UtcNow.AddDays(days);
-        var password = req.Password ?? "Pos123!";
+        var password = req.Password ?? license.Password;
         var newKey = LicenseService.GenerateLicenseKey(
             license.MachineId, license.CustomerName, expiresAt, license.Username, password);
 
@@ -226,5 +280,53 @@ public class SiteAdminController : ControllerBase
         _licenseDb.Licenses.Remove(license);
         await _licenseDb.SaveChangesAsync();
         return Ok(new { success = true });
+    }
+
+    // ═══════════════════════════════════════
+    // SİSTEM AYARLARI
+    // ═══════════════════════════════════════
+
+    [HttpGet("system-info")]
+    [Authorize(Roles = "SiteAdmin")]
+    public async Task<IActionResult> GetSystemInfo()
+    {
+        var mainDbPath = Path.Combine(Directory.GetCurrentDirectory(), "BarcodePos.db");
+        var licenseDbPath = Path.Combine(Directory.GetCurrentDirectory(), "licenses.db");
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                ApiVersion = typeof(SiteAdminController).Assembly.GetName().Version?.ToString() ?? "1.0.0",
+                Environment = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+                ServerTime = DateTime.UtcNow,
+                MainDbSize = System.IO.File.Exists(mainDbPath) ? new FileInfo(mainDbPath).Length : 0,
+                LicenseDbSize = System.IO.File.Exists(licenseDbPath) ? new FileInfo(licenseDbPath).Length : 0,
+                JwtSecretConfigured = !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("JWT_SECRET")),
+                AdminEmailConfigured = !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("SITE_ADMIN_EMAIL")),
+                AdminPasswordConfigured = !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("SITE_ADMIN_PASSWORD")),
+                AllowedOriginsConfigured = !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")),
+                TotalLicenses = await _licenseDb.Licenses.CountAsync(),
+                ActiveLicenses = await _licenseDb.Licenses.CountAsync(l => l.IsActive && l.ExpiresAt >= DateTime.UtcNow),
+            }
+        });
+    }
+
+    [HttpPost("change-password")]
+    [Authorize(Roles = "SiteAdmin")]
+    public IActionResult ChangePassword([FromBody] ChangeAdminPasswordRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.CurrentPassword) || string.IsNullOrWhiteSpace(req.NewPassword))
+            return BadRequest(new { success = false, message = "Mevcut ve yeni şifre zorunlu." });
+
+        if (req.NewPassword.Length < 8)
+            return BadRequest(new { success = false, message = "Yeni şifre en az 8 karakter olmalı." });
+
+        var result = _siteAdminService.ChangeAdminPassword(req.CurrentPassword, req.NewPassword);
+        if (!result.Success)
+            return BadRequest(new { success = false, message = result.Message });
+
+        return Ok(new { success = true, message = "Şifre başarıyla değiştirildi." });
     }
 }

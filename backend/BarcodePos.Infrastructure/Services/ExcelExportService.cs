@@ -156,6 +156,79 @@ public class ExcelExportService : IExcelExportService
         return WorkbookToBytes(workbook);
     }
 
+    public async Task<byte[]> ExportDailyClosingAsync(DateTime date, int storeId)
+    {
+        var result = await _reportService.GetDailyClosingReportAsync(date, storeId);
+        var data = result.Data!;
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Gün Sonu Raporu");
+
+        ws.Cell(1, 1).Value = $"Gün Sonu Raporu — {date:dd.MM.yyyy}";
+        ws.Range(1, 1, 1, 4).Merge().Style.Font.SetBold(true).Font.SetFontSize(14);
+
+        var row = 3;
+        void AddSummaryRow(string label, string value)
+        {
+            ws.Cell(row, 1).Value = label;
+            ws.Cell(row, 1).Style.Font.SetBold(true);
+            ws.Cell(row, 2).Value = value;
+            row++;
+        }
+
+        AddSummaryRow("TOPLAM CİRO:", $"{data.GrandTotal:N2} ₺");
+        AddSummaryRow("Ara Toplam (KDV Hariç):", $"{data.SubTotal:N2} ₺");
+        AddSummaryRow("KDV Toplamı:", $"{data.TaxTotal:N2} ₺");
+        AddSummaryRow("İndirim Toplamı:", $"{data.DiscountTotal:N2} ₺");
+        AddSummaryRow("Satış Adedi:", $"{data.SaleCount}");
+        AddSummaryRow("Satılan Ürün Adedi:", $"{data.TotalItemsSold}");
+        AddSummaryRow("Ortalama Sepet:", $"{data.AverageBasket:N2} ₺");
+        row++;
+        AddSummaryRow("NAKİT:", $"{data.CashTotal:N2} ₺ ({data.CashCount} işlem)");
+        AddSummaryRow("KREDİ KARTI / POS:", $"{data.CardTotal:N2} ₺ ({data.CardCount} işlem)");
+        AddSummaryRow("VERESİYE:", $"{data.CreditTotal:N2} ₺ ({data.CreditCount} işlem)");
+        row++;
+        AddSummaryRow("İptal:", $"{data.CancelTotal:N2} ₺ ({data.CancelCount} adet)");
+        AddSummaryRow("İade:", $"{data.ReturnTotal:N2} ₺ ({data.ReturnCount} adet)");
+        row++;
+        AddSummaryRow("Maliyet:", $"{data.TotalCost:N2} ₺");
+        AddSummaryRow("Brüt Kâr:", $"{data.GrossProfit:N2} ₺");
+        AddSummaryRow("Kâr Marjı:", $"%{data.GrossProfitMargin:N2}");
+
+        // Kasiyer kırılımı
+        if (data.CashierBreakdown.Count > 0)
+        {
+            row += 2;
+            ws.Cell(row, 1).Value = "KASİYER KIRILIMI";
+            ws.Cell(row, 1).Style.Font.SetBold(true).Font.SetFontSize(12);
+            row++;
+            var cashierHeaders = new[] { "Kasiyer", "Satış", "Toplam", "Nakit", "Kart", "Veresiye" };
+            for (int i = 0; i < cashierHeaders.Length; i++)
+            {
+                ws.Cell(row, i + 1).Value = cashierHeaders[i];
+                ws.Cell(row, i + 1).Style.Font.SetBold(true).Fill.SetBackgroundColor(XLColor.LightGray);
+            }
+            row++;
+            foreach (var c in data.CashierBreakdown)
+            {
+                ws.Cell(row, 1).Value = c.FullName;
+                ws.Cell(row, 2).Value = c.SaleCount;
+                ws.Cell(row, 3).Value = c.Total;
+                ws.Cell(row, 3).Style.NumberFormat.Format = "#,##0.00";
+                ws.Cell(row, 4).Value = c.CashTotal;
+                ws.Cell(row, 4).Style.NumberFormat.Format = "#,##0.00";
+                ws.Cell(row, 5).Value = c.CardTotal;
+                ws.Cell(row, 5).Style.NumberFormat.Format = "#,##0.00";
+                ws.Cell(row, 6).Value = c.CreditTotal;
+                ws.Cell(row, 6).Style.NumberFormat.Format = "#,##0.00";
+                row++;
+            }
+        }
+
+        ws.Columns().AdjustToContents();
+        return WorkbookToBytes(workbook);
+    }
+
     private static byte[] WorkbookToBytes(XLWorkbook workbook)
     {
         using var stream = new MemoryStream();

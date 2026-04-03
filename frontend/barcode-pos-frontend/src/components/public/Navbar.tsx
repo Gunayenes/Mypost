@@ -5,7 +5,6 @@ import { Menu, X } from 'lucide-react';
 const navLinks = [
   { label: 'Özellikler', href: '/ozellikler' },
   { label: 'Fiyatlandırma', href: '/fiyatlandirma' },
-  { label: 'İndir', href: '/indir' },
   { label: 'İletişim', href: '/iletisim' },
 ];
 
@@ -34,9 +33,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-shadow">
-              <span className="text-white font-extrabold text-lg leading-none">K</span>
-            </div>
+            <img src="/Logom.jpg" alt="KasaPlus" className="w-9 h-9 rounded-xl object-cover shadow-lg group-hover:shadow-primary-500/40 transition-shadow" />
             <span className="text-xl font-bold text-slate-900">
               Kasa<span className="text-primary-600">Plus</span>
             </span>

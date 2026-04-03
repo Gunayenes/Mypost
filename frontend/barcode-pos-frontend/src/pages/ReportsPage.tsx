@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { reportsApi } from '@/api/dashboard';
+import { servicesApi } from '@/api/services';
+import type { ServiceListItem } from '@/types';
 import {
   BarChart3, Download, TrendingUp, TrendingDown, DollarSign, Percent,
   ShoppingCart, Package, AlertTriangle, CreditCard, Loader2,
+  Calendar, Banknote, Wallet, Clock, Users, Wrench,
 } from 'lucide-react';
 
 // ── Tipler ──
@@ -42,7 +45,37 @@ interface TopProduct { productId: number; barcode: string; productName: string; 
 interface LowStockItem { productId: number; barcode: string; name: string; categoryName: string; stockQuantity: number; minStockLevel: number; deficit: number; }
 interface PaymentSummary { paymentType: string; paymentTypeName: string; count: number; total: number; percentage: number; }
 
-type TabKey = 'sales' | 'profit' | 'top-products' | 'payment' | 'low-stock';
+interface HourlySales { hour: number; hourLabel: string; saleCount: number; total: number; itemCount: number; }
+interface CashierSales { userId: number; fullName: string; saleCount: number; total: number; cashTotal: number; cardTotal: number; creditTotal: number; }
+
+interface DailyClosingData {
+  date: string;
+  grandTotal: number;
+  subTotal: number;
+  taxTotal: number;
+  discountTotal: number;
+  saleCount: number;
+  totalItemsSold: number;
+  averageBasket: number;
+  cashTotal: number;
+  cashCount: number;
+  cardTotal: number;
+  cardCount: number;
+  creditTotal: number;
+  creditCount: number;
+  cancelCount: number;
+  cancelTotal: number;
+  returnCount: number;
+  returnTotal: number;
+  totalCost: number;
+  grossProfit: number;
+  grossProfitMargin: number;
+  hourlyBreakdown: HourlySales[];
+  cashierBreakdown: CashierSales[];
+  topProducts: TopProduct[];
+}
+
+type TabKey = 'daily-closing' | 'sales' | 'profit' | 'top-products' | 'payment' | 'low-stock' | 'services';
 
 function toast(type: 'success' | 'error', message: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { type, message } }));
@@ -54,33 +87,45 @@ const defaultEndDate = new Date().toISOString().split('T')[0];
 export default function ReportsPage() {
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
-  const [activeTab, setActiveTab] = useState<TabKey>('sales');
+  const [selectedDate, setSelectedDate] = useState(defaultEndDate);
+  const [activeTab, setActiveTab] = useState<TabKey>('daily-closing');
   const [loading, setLoading] = useState(false);
 
   // Veri state'leri
+  const [dailyClosing, setDailyClosing] = useState<DailyClosingData | null>(null);
   const [report, setReport] = useState<ReportData | null>(null);
   const [profitReport, setProfitReport] = useState<ProfitData | null>(null);
   const [topProducts, setTopProducts] = useState<TopProduct[] | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary[] | null>(null);
   const [lowStock, setLowStock] = useState<LowStockItem[] | null>(null);
+  const [serviceItems, setServiceItems] = useState<ServiceListItem[] | null>(null);
 
   const [profitSubTab, setProfitSubTab] = useState<'summary' | 'daily' | 'category' | 'products'>('summary');
+  const [dailySubTab, setDailySubTab] = useState<'summary' | 'hourly' | 'cashier' | 'products'>('summary');
 
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [salesRes, profitRes, topRes, payRes, lowRes] = await Promise.all([
+      const [closingRes, salesRes, profitRes, topRes, payRes, lowRes] = await Promise.all([
+        reportsApi.dailyClosingReport(selectedDate),
         reportsApi.salesReport(startDate, endDate),
         reportsApi.profitReport(startDate, endDate),
         reportsApi.topProducts(startDate, endDate),
         reportsApi.paymentSummary(startDate, endDate),
         reportsApi.lowStock(),
       ]);
+      if (closingRes.data.success) setDailyClosing(closingRes.data.data);
       if (salesRes.data.success) setReport(salesRes.data.data);
       if (profitRes.data.success) setProfitReport(profitRes.data.data);
       if (topRes.data.success) setTopProducts(topRes.data.data);
       if (payRes.data.success) setPaymentSummary(payRes.data.data);
       if (lowRes.data.success) setLowStock(lowRes.data.data);
+
+      // Servis raporu
+      try {
+        const sRes = await servicesApi.getAll({ dateFrom: startDate, dateTo: endDate, pageSize: 100 });
+        if (sRes.data.success && sRes.data.data) setServiceItems(sRes.data.data.items);
+      } catch { /* silent */ }
     } catch {
       toast('error', 'Raporlar yüklenirken hata oluştu.');
     }
@@ -105,9 +150,11 @@ export default function ReportsPage() {
 
   const getExportType = (): string => {
     switch (activeTab) {
+      case 'daily-closing': return 'daily-closing';
       case 'profit': return 'profit';
       case 'top-products': return 'top-products';
       case 'low-stock': return 'low-stock';
+      case 'services': return 'sales';
       default: return 'sales';
     }
   };
@@ -115,11 +162,13 @@ export default function ReportsPage() {
   const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const tabs: { key: TabKey; label: string; icon: typeof BarChart3; color: string }[] = [
+    { key: 'daily-closing', label: 'Günlük Rapor', icon: Calendar, color: 'emerald' },
     { key: 'sales', label: 'Satış Raporu', icon: BarChart3, color: 'blue' },
     { key: 'profit', label: 'Kâr / Zarar', icon: DollarSign, color: 'green' },
     { key: 'top-products', label: 'En Çok Satanlar', icon: ShoppingCart, color: 'purple' },
     { key: 'payment', label: 'Ödeme Dağılımı', icon: CreditCard, color: 'indigo' },
     { key: 'low-stock', label: 'Düşük Stok', icon: AlertTriangle, color: 'red' },
+    { key: 'services', label: 'Servis Raporu', icon: Wrench, color: 'cyan' },
   ];
 
   return (
@@ -129,14 +178,23 @@ export default function ReportsPage() {
       {/* Tarih seçimi + butonlar */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex flex-wrap items-end gap-3 mb-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Başlangıç</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Bitiş</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
-          </div>
+          {activeTab === 'daily-closing' ? (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Rapor Tarihi</label>
+              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Başlangıç</label>
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bitiş</label>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
+              </div>
+            </>
+          )}
           <button onClick={loadAll} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
             {loading ? <Loader2 size={14} className="animate-spin" /> : null}
             {loading ? 'Yükleniyor...' : 'Rapor Getir'}
@@ -163,6 +221,265 @@ export default function ReportsPage() {
             </button>
           ))}
         </div>
+
+        {/* ── Günlük Rapor (Gün Sonu / Z Raporu) ── */}
+        {activeTab === 'daily-closing' && dailyClosing && (
+          <>
+            {/* Ana Özet Kartları */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign size={16} className="opacity-80" />
+                  <span className="text-xs font-semibold uppercase opacity-80">Toplam Ciro</span>
+                </div>
+                <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.grandTotal)}</p>
+                <p className="text-xs opacity-70 mt-1">{dailyClosing.saleCount} satış · {dailyClosing.totalItemsSold} ürün</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
+                <div className="flex items-center gap-2 mb-1">
+                  <Banknote size={16} className="opacity-80" />
+                  <span className="text-xs font-semibold uppercase opacity-80">Nakit</span>
+                </div>
+                <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.cashTotal)}</p>
+                <p className="text-xs opacity-70 mt-1">{dailyClosing.cashCount} işlem</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard size={16} className="opacity-80" />
+                  <span className="text-xs font-semibold uppercase opacity-80">Kredi Kartı / POS</span>
+                </div>
+                <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.cardTotal)}</p>
+                <p className="text-xs opacity-70 mt-1">{dailyClosing.cardCount} işlem</p>
+              </div>
+              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet size={16} className="opacity-80" />
+                  <span className="text-xs font-semibold uppercase opacity-80">Veresiye</span>
+                </div>
+                <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.creditTotal)}</p>
+                <p className="text-xs opacity-70 mt-1">{dailyClosing.creditCount} işlem</p>
+              </div>
+            </div>
+
+            {/* Detay Kartları */}
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p className="text-[11px] text-gray-500 font-semibold uppercase">KDV Hariç</p>
+                <p className="text-base font-bold text-gray-900 tabular-nums mt-0.5">₺{fmt(dailyClosing.subTotal)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p className="text-[11px] text-gray-500 font-semibold uppercase">KDV Toplamı</p>
+                <p className="text-base font-bold text-gray-900 tabular-nums mt-0.5">₺{fmt(dailyClosing.taxTotal)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p className="text-[11px] text-gray-500 font-semibold uppercase">İndirim</p>
+                <p className="text-base font-bold text-gray-900 tabular-nums mt-0.5">₺{fmt(dailyClosing.discountTotal)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p className="text-[11px] text-gray-500 font-semibold uppercase">Ort. Sepet</p>
+                <p className="text-base font-bold text-gray-900 tabular-nums mt-0.5">₺{fmt(dailyClosing.averageBasket)}</p>
+              </div>
+              <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                <p className="text-[11px] text-red-600 font-semibold uppercase">İptal</p>
+                <p className="text-base font-bold text-red-700 tabular-nums mt-0.5">{dailyClosing.cancelCount} · ₺{fmt(dailyClosing.cancelTotal)}</p>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                <p className="text-[11px] text-orange-600 font-semibold uppercase">İade</p>
+                <p className="text-base font-bold text-orange-700 tabular-nums mt-0.5">{dailyClosing.returnCount} · ₺{fmt(dailyClosing.returnTotal)}</p>
+              </div>
+            </div>
+
+            {/* Kâr Özeti */}
+            <div className={`rounded-xl p-4 mb-4 border ${dailyClosing.grossProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {dailyClosing.grossProfit >= 0 ? <TrendingUp size={24} className="text-green-600" /> : <TrendingDown size={24} className="text-red-600" />}
+                  <div>
+                    <p className={`text-xs font-semibold uppercase ${dailyClosing.grossProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      Günlük Brüt {dailyClosing.grossProfit >= 0 ? 'Kâr' : 'Zarar'}
+                    </p>
+                    <p className={`text-2xl font-black tabular-nums ${dailyClosing.grossProfit >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+                      ₺{fmt(Math.abs(dailyClosing.grossProfit))}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Maliyet: ₺{fmt(dailyClosing.totalCost)}</p>
+                  <p className="text-xs text-gray-500">Marj: %{dailyClosing.grossProfitMargin.toFixed(1)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Alt Tab'lar */}
+            <div className="flex gap-1 mb-4">
+              {(['summary', 'hourly', 'cashier', 'products'] as const).map((tab) => (
+                <button key={tab} onClick={() => setDailySubTab(tab)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${dailySubTab === tab ? 'bg-emerald-100 text-emerald-800' : 'text-gray-500 hover:bg-gray-100'}`}>
+                  {tab === 'summary' && <><BarChart3 size={12} /> Ödeme Özeti</>}
+                  {tab === 'hourly' && <><Clock size={12} /> Saatlik Dağılım</>}
+                  {tab === 'cashier' && <><Users size={12} /> Kasiyer Bazlı</>}
+                  {tab === 'products' && <><Package size={12} /> Günün Ürünleri</>}
+                </button>
+              ))}
+            </div>
+
+            {/* Ödeme Özeti */}
+            {dailySubTab === 'summary' && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { label: 'Nakit', total: dailyClosing.cashTotal, count: dailyClosing.cashCount, color: 'green', icon: Banknote },
+                  { label: 'Kredi Kartı / POS', total: dailyClosing.cardTotal, count: dailyClosing.cardCount, color: 'purple', icon: CreditCard },
+                  { label: 'Veresiye', total: dailyClosing.creditTotal, count: dailyClosing.creditCount, color: 'amber', icon: Wallet },
+                ].map((item) => {
+                  const pct = dailyClosing.grandTotal > 0 ? (item.total / dailyClosing.grandTotal * 100) : 0;
+                  return (
+                    <div key={item.label} className="bg-white border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <item.icon size={16} className="text-gray-500" />
+                          <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                        </div>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{item.count} işlem</span>
+                      </div>
+                      <p className="text-2xl font-black text-gray-900 tabular-nums">₺{fmt(item.total)}</p>
+                      <div className="mt-3">
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                          <div className={`h-full bg-${item.color}-500 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 text-right">%{pct.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Saatlik Dağılım */}
+            {dailySubTab === 'hourly' && (
+              <div className="space-y-3">
+                {/* Grafik barları */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-end gap-1" style={{ height: 160 }}>
+                    {dailyClosing.hourlyBreakdown.map((h) => {
+                      const maxTotal = Math.max(...dailyClosing.hourlyBreakdown.map(x => x.total), 1);
+                      const barHeight = maxTotal > 0 ? (h.total / maxTotal * 100) : 0;
+                      return (
+                        <div key={h.hour} className="flex-1 flex flex-col items-center gap-1" title={`${h.hourLabel} — ₺${fmt(h.total)} (${h.saleCount} satış)`}>
+                          <div className="w-full flex flex-col justify-end" style={{ height: 120 }}>
+                            <div
+                              className={`w-full rounded-t transition-all ${h.saleCount > 0 ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                              style={{ height: `${Math.max(barHeight, 2)}%` }}
+                            />
+                          </div>
+                          <span className="text-[9px] text-gray-400 font-mono">{h.hour}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Tablo */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="text-left px-4 py-2 font-semibold text-gray-600">Saat</th>
+                        <th className="text-right px-4 py-2 font-semibold text-gray-600">Satış</th>
+                        <th className="text-right px-4 py-2 font-semibold text-gray-600">Ürün</th>
+                        <th className="text-right px-4 py-2 font-semibold text-gray-600">Tutar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dailyClosing.hourlyBreakdown.filter(h => h.saleCount > 0).map((h) => (
+                        <tr key={h.hour} className="border-b border-gray-100">
+                          <td className="px-4 py-2 font-mono text-gray-700">{h.hourLabel}</td>
+                          <td className="px-4 py-2 text-right">{h.saleCount}</td>
+                          <td className="px-4 py-2 text-right">{h.itemCount}</td>
+                          <td className="px-4 py-2 text-right font-semibold">₺{fmt(h.total)}</td>
+                        </tr>
+                      ))}
+                      {dailyClosing.hourlyBreakdown.filter(h => h.saleCount > 0).length === 0 && (
+                        <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">Bu tarihte satış bulunmuyor.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Kasiyer Bazlı */}
+            {dailySubTab === 'cashier' && (
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-600">Kasiyer</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Satış</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Toplam</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Nakit</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Kart</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Veresiye</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyClosing.cashierBreakdown.map((c) => (
+                      <tr key={c.userId} className="border-b border-gray-100">
+                        <td className="px-4 py-2 font-medium">{c.fullName}</td>
+                        <td className="px-4 py-2 text-right">{c.saleCount}</td>
+                        <td className="px-4 py-2 text-right font-bold">₺{fmt(c.total)}</td>
+                        <td className="px-4 py-2 text-right text-green-700">₺{fmt(c.cashTotal)}</td>
+                        <td className="px-4 py-2 text-right text-purple-700">₺{fmt(c.cardTotal)}</td>
+                        <td className="px-4 py-2 text-right text-amber-700">₺{fmt(c.creditTotal)}</td>
+                      </tr>
+                    ))}
+                    {dailyClosing.cashierBreakdown.length === 0 && (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Bu tarihte satış bulunmuyor.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Günün En Çok Satan Ürünleri */}
+            {dailySubTab === 'products' && (
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-600">#</th>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-600">Ürün</th>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-600">Kategori</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Adet</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Gelir</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-600">Kâr</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyClosing.topProducts.map((p, i) => (
+                      <tr key={p.productId} className="border-b border-gray-100">
+                        <td className="px-4 py-2 text-gray-400 font-mono">{i + 1}</td>
+                        <td className="px-4 py-2">
+                          <div className="font-medium">{p.productName}</div>
+                          <div className="text-xs text-gray-400">{p.barcode}</div>
+                        </td>
+                        <td className="px-4 py-2 text-gray-600">{p.categoryName}</td>
+                        <td className="px-4 py-2 text-right font-semibold">{p.totalQuantity}</td>
+                        <td className="px-4 py-2 text-right">₺{fmt(p.totalRevenue)}</td>
+                        <td className={`px-4 py-2 text-right font-semibold ${p.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>₺{fmt(p.totalProfit)}</td>
+                      </tr>
+                    ))}
+                    {dailyClosing.topProducts.length === 0 && (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Bu tarihte satış bulunmuyor.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'daily-closing' && !dailyClosing && !loading && (
+          <p className="text-center text-gray-400 py-8">Tarih seçip "Rapor Getir" butonuna basın.</p>
+        )}
 
         {/* ── Satış Raporu ── */}
         {activeTab === 'sales' && report && (
@@ -492,6 +809,75 @@ export default function ReportsPage() {
 
         {activeTab === 'low-stock' && !lowStock && !loading && (
           <p className="text-center text-gray-400 py-8">"Rapor Getir" butonuna basarak düşük stoklu ürünleri görüntüleyin.</p>
+        )}
+
+        {/* ── Servis Raporu ── */}
+        {activeTab === 'services' && serviceItems && (
+          <div className="space-y-4">
+            {/* Özet kartları */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl p-4 text-white">
+                <span className="text-xs font-semibold uppercase opacity-80">Toplam Servis</span>
+                <p className="text-2xl font-black tabular-nums mt-1">{serviceItems.length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
+                <span className="text-xs font-semibold uppercase opacity-80">Tamamlanan</span>
+                <p className="text-2xl font-black tabular-nums mt-1">{serviceItems.filter(s => s.status === 'Tamamlandi' || s.status === 'TeslimEdildi').length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white">
+                <span className="text-xs font-semibold uppercase opacity-80">Devam Eden</span>
+                <p className="text-2xl font-black tabular-nums mt-1">{serviceItems.filter(s => !['Tamamlandi','TeslimEdildi','IptalEdildi'].includes(s.status)).length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                <span className="text-xs font-semibold uppercase opacity-80">Toplam Ücret</span>
+                <p className="text-2xl font-black tabular-nums mt-1">₺{fmt(serviceItems.reduce((a,s) => a + s.totalCost, 0))}</p>
+              </div>
+            </div>
+
+            {/* Tablo */}
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Takip No</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Müşteri</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Cihaz</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Durum</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Öncelik</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Teknisyen</th>
+                    <th className="text-right px-4 py-2 font-semibold text-gray-600">Ücret</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Ödeme</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-600">Tarih</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serviceItems.map((s) => (
+                    <tr key={s.id} className="border-b border-gray-100">
+                      <td className="px-4 py-2 font-mono text-xs font-bold text-primary">{s.serviceNumber}</td>
+                      <td className="px-4 py-2">
+                        <div className="font-medium text-gray-800">{s.customerName}</div>
+                        {s.customerPhone && <div className="text-xs text-gray-400">{s.customerPhone}</div>}
+                      </td>
+                      <td className="px-4 py-2 text-gray-600">{s.deviceName} {s.deviceBrand ? `(${s.deviceBrand})` : ''}</td>
+                      <td className="px-4 py-2"><span className="text-xs font-semibold">{s.statusName}</span></td>
+                      <td className="px-4 py-2"><span className="text-xs font-semibold">{s.priorityName}</span></td>
+                      <td className="px-4 py-2 text-gray-600">{s.assignedUserName ?? '—'}</td>
+                      <td className="px-4 py-2 text-right font-semibold tabular-nums">₺{fmt(s.totalCost)}</td>
+                      <td className="px-4 py-2"><span className="text-xs font-semibold">{s.paymentStatusName}</span></td>
+                      <td className="px-4 py-2 text-gray-500 text-xs">{new Date(s.createdAt).toLocaleDateString('tr-TR')}</td>
+                    </tr>
+                  ))}
+                  {serviceItems.length === 0 && (
+                    <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400">Bu tarih aralığında servis kaydı bulunamadı.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'services' && !serviceItems && !loading && (
+          <p className="text-center text-gray-400 py-8">Tarih aralığı seçip "Rapor Getir" butonuna basın.</p>
         )}
       </div>
     </div>

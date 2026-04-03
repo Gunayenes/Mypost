@@ -48,10 +48,12 @@ export default function POSPage() {
     customerId,
     paymentType,
     paidAmount,
+    roundingAmount,
     setCustomerId,
     setPaymentType,
     setPaidAmount,
     addPaidAmount,
+    setRoundingAmount,
     addProduct,
     removeItem,
     updateQuantity,
@@ -59,6 +61,7 @@ export default function POSPage() {
     getSubTotal,
     getTaxTotal,
     getGrandTotal,
+    getRoundedGrandTotal,
     getChange,
     getItemCount,
   } = useCartStore();
@@ -203,7 +206,7 @@ export default function POSPage() {
 
   const handleCompleteSale = async () => {
     if (items.length === 0) return;
-    const total = getGrandTotal();
+    const total = getRoundedGrandTotal();
 
     // Nakit/Kart ödemede ödenen tutar kontrolü
     if (paymentType !== 'Veresiye' && paidAmount < total) {
@@ -226,7 +229,7 @@ export default function POSPage() {
         customerId,
         paymentType,
         paidAmount,
-        discountTotal: 0,
+        discountTotal: roundingAmount,
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -263,7 +266,7 @@ export default function POSPage() {
   }, [items, paymentType]);
 
   const quickAmounts = [20, 50, 100, 200];
-  const grandTotal = getGrandTotal();
+  const grandTotal = getRoundedGrandTotal();
 
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] -m-6">
@@ -387,7 +390,7 @@ export default function POSPage() {
                 } hover:bg-blue-50/50 transition-colors`}
               >
                 <span className="text-center text-base text-gray-400 font-black">{idx + 1}</span>
-                <div className="min-w-0">
+                <div className="min-w-0" title={`Alış: ₺${item.costPrice.toFixed(2)} | Kâr: ₺${((item.unitPrice - item.costPrice) * item.quantity).toFixed(2)}`}>
                   <p className="font-black text-lg text-gray-900 truncate">{item.name}</p>
                   <p className="text-sm text-gray-400 font-mono">{item.barcode}</p>
                 </div>
@@ -628,7 +631,53 @@ export default function POSPage() {
                 <span className="font-medium">KDV</span>
                 <span className="tabular-nums font-bold text-gray-800">₺{getTaxTotal().toFixed(2)}</span>
               </div>
+              {roundingAmount !== 0 && (
+                <div className="flex justify-between text-amber-600">
+                  <span className="font-medium">Yuvarlama</span>
+                  <span className="tabular-nums font-bold">
+                    {roundingAmount > 0 ? '-' : '+'}₺{Math.abs(roundingAmount).toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Yuvarlama butonları */}
+            {items.length > 0 && (
+              <div className="px-3 pb-2 flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold text-gray-400 uppercase shrink-0">Yuvarla:</span>
+                {[0.5, 1, 5, 10].map((step) => {
+                  const raw = getGrandTotal();
+                  const rounded = Math.round(raw / step) * step;
+                  const diff = Math.round((raw - rounded) * 100) / 100;
+                  const isActive = roundingAmount !== 0 && Math.abs(roundingAmount - diff) < 0.005;
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => setRoundingAmount(isActive ? 0 : diff)}
+                      className={`px-2 py-1 rounded text-[11px] font-bold transition border ${
+                        isActive
+                          ? 'border-amber-500 bg-amber-500 text-white'
+                          : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-amber-50 hover:border-amber-300'
+                      }`}
+                      title={`₺${rounded.toFixed(2)}'ye yuvarla`}
+                    >
+                      {step < 1 ? `${step * 100}kr` : `${step}₺`}
+                    </button>
+                  );
+                })}
+                {roundingAmount !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setRoundingAmount(0)}
+                    className="px-2 py-1 rounded text-[11px] font-bold border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="px-4 py-4 bg-slate-800 flex justify-between items-center">
               <span className="text-white text-lg font-black">TOPLAM</span>
               <span className="text-white text-3xl font-black tabular-nums">

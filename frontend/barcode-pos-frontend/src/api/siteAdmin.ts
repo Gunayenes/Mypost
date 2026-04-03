@@ -10,7 +10,11 @@ import type {
   LicenseListItem,
   LicenseStats,
   CreateLicenseRequest,
+  CreateSiteAdminCustomerRequest,
   RenewLicenseRequest,
+  SystemInfo,
+  UpdateSiteAdminCustomerRequest,
+  PasswordResetRequestItem,
 } from '@/types/siteAdmin';
 
 const siteApi = axios.create({
@@ -47,11 +51,20 @@ export const siteAdminApi = {
   getCustomers: (params: { search?: string; page?: number; pageSize?: number }) =>
     siteApi.get<ApiResult<PagedData<SiteAdminCustomerListItem>>>('/site-admin/customers', { params }),
 
+  createCustomer: (data: CreateSiteAdminCustomerRequest) =>
+    siteApi.post<ApiResult<SiteAdminCustomerDetail>>('/site-admin/customers', data),
+
   getCustomerDetail: (id: number) =>
     siteApi.get<ApiResult<SiteAdminCustomerDetail>>(`/site-admin/customers/${id}`),
 
   toggleCustomerActive: (id: number) =>
     siteApi.patch<ApiResult<void>>(`/site-admin/customers/${id}/toggle-active`),
+
+  updateCustomer: (id: number, data: UpdateSiteAdminCustomerRequest) =>
+    siteApi.put<ApiResult<void>>(`/site-admin/customers/${id}`, data),
+
+  resetCustomerPassword: (id: number, newPassword: string) =>
+    siteApi.post<ApiResult<void>>(`/site-admin/customers/${id}/reset-password`, { newPassword }),
 
   getSubscriptions: (params: { filter?: string; page?: number; pageSize?: number }) =>
     siteApi.get<ApiResult<PagedData<SiteAdminSubscriptionItem>>>('/site-admin/subscriptions', { params }),
@@ -61,6 +74,13 @@ export const siteAdminApi = {
 
   cancelSubscription: (id: number) =>
     siteApi.patch<ApiResult<void>>(`/site-admin/subscriptions/${id}/cancel`),
+
+  // ── Password Reset Requests ──
+  getPasswordResetRequests: () =>
+    siteApi.get<ApiResult<PasswordResetRequestItem[]>>('/site-admin/password-reset-requests'),
+
+  dismissPasswordResetRequest: (customerId: number) =>
+    siteApi.delete<ApiResult<void>>(`/site-admin/password-reset-requests/${customerId}`),
 
   // ── License Management ──
   getLicenseStats: () =>
@@ -80,4 +100,11 @@ export const siteAdminApi = {
 
   deleteLicense: (id: number) =>
     siteApi.delete<ApiResult<void>>(`/site-admin/licenses/${id}`),
+
+  // ── System / Settings ──
+  getSystemInfo: () =>
+    siteApi.get<ApiResult<SystemInfo>>('/site-admin/system-info'),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    siteApi.post<ApiResult<void>>('/site-admin/change-password', data),
 };

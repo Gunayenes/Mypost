@@ -1,6 +1,6 @@
 import {
   ScanBarcode, Package, Users, BarChart3, Tags, HardDrive,
-  UserCog, Monitor, ShieldCheck, Zap, RefreshCw, Smartphone,
+  UserCog, Wrench, ShieldCheck, Zap, RefreshCw, Smartphone,
 } from 'lucide-react';
 import FadeIn from '@/components/common/FadeIn';
 import CTASection from '@/components/landing/CTASection';
@@ -56,11 +56,11 @@ const sections = [
     features: ['Rol bazlı yetkilendirme', 'Admin & kasiyer rolleri', 'İşlem logları', 'Güvenli oturum yönetimi'],
   },
   {
-    icon: Monitor,
-    title: 'Masaüstü Uygulama',
-    desc: 'Windows masaüstü uygulaması ile internet bağlantısı olmadan da çalışın. Otomatik güncelleme ile her zaman güncel kalın.',
+    icon: Wrench,
+    title: 'Servis Takip',
+    desc: 'Teknik servis, tamir ve bakım hizmeti veren işletmeler için servis kayıtlarını, parça takibini ve müşteri bilgilendirmesini tek yerden yönetin.',
     color: 'bg-indigo-50 text-indigo-600',
-    features: ['Offline çalışma', 'Otomatik güncelleme', 'Hızlı başlatma', 'Düşük sistem gereksinimi'],
+    features: ['Servis kaydı oluşturma', 'Parça ve işçilik takibi', 'Müşteri bilgilendirme', 'Servis durumu sorgulama'],
   },
 ];
 

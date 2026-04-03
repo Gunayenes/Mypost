@@ -86,6 +86,9 @@ export interface Product {
   description?: string;
   costPrice: number;
   salePrice: number;
+  costPriceUsd?: number | null;
+  salePriceUsd?: number | null;
+  exchangeRate?: number | null;
   taxRate: number;
   stockQuantity: number;
   minStockLevel: number;
@@ -101,6 +104,9 @@ export interface CreateProductRequest {
   description?: string;
   costPrice: number;
   salePrice: number;
+  costPriceUsd?: number | null;
+  salePriceUsd?: number | null;
+  exchangeRate?: number | null;
   taxRate: number;
   stockQuantity: number;
   minStockLevel: number;
@@ -113,6 +119,9 @@ export interface UpdateProductRequest {
   description?: string;
   costPrice: number;
   salePrice: number;
+  costPriceUsd?: number | null;
+  salePriceUsd?: number | null;
+  exchangeRate?: number | null;
   taxRate: number;
   minStockLevel: number;
 }
@@ -280,7 +289,120 @@ export interface CartItem {
   barcode: string;
   name: string;
   unitPrice: number;
+  costPrice: number;
   taxRate: number;
   quantity: number;
   discountAmount: number;
+}
+
+// ── Servis Modülü ──
+
+export interface ServiceRecord {
+  id: number;
+  serviceNumber: string;
+  customerId: number;
+  customerName: string;
+  customerPhone?: string;
+  assignedUserId?: number;
+  assignedUserName?: string;
+  receivedByUserName: string;
+  deviceName: string;
+  deviceBrand?: string;
+  deviceModel?: string;
+  deviceSerial?: string;
+  deviceAccessories?: string;
+  deviceCondition?: string;
+  faultDescription: string;
+  customerNote?: string;
+  status: string;
+  statusName: string;
+  priority: string;
+  priorityName: string;
+  estimatedCompletionDate?: string;
+  completedDate?: string;
+  deliveredDate?: string;
+  laborCost: number;
+  partsCost: number;
+  totalCost: number;
+  paidAmount: number;
+  paymentStatus: string;
+  paymentStatusName: string;
+  createdAt: string;
+  updatedAt?: string;
+  logs: ServiceLog[];
+  parts: ServicePart[];
+}
+
+export interface ServiceListItem {
+  id: number;
+  serviceNumber: string;
+  customerName: string;
+  customerPhone?: string;
+  deviceName: string;
+  deviceBrand?: string;
+  deviceModel?: string;
+  faultDescription: string;
+  status: string;
+  statusName: string;
+  priority: string;
+  priorityName: string;
+  assignedUserName?: string;
+  totalCost: number;
+  paymentStatusName: string;
+  estimatedCompletionDate?: string;
+  deliveredDate?: string;
+  createdAt: string;
+}
+
+export interface ServiceSummary {
+  totalCount: number;
+  kayitAcildiCount: number;
+  incelemedeCount: number;
+  onayBekliyorCount: number;
+  parcaBekliyorCount: number;
+  islemdeCount: number;
+  tamamlandiCount: number;
+  teslimEdildiCount: number;
+  iptalEdildiCount: number;
+  borcluCount: number;
+}
+
+export interface ServiceLog {
+  id: number;
+  userName: string;
+  oldStatusName?: string;
+  newStatusName?: string;
+  description: string;
+  isInternal: boolean;
+  createdAt: string;
+}
+
+export interface ServicePart {
+  id: number;
+  productId?: number;
+  partName: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  deductedFromStock: boolean;
+  addedByUserName: string;
+  createdAt: string;
+}
+
+export interface ServiceTracking {
+  serviceNumber: string;
+  deviceName: string;
+  deviceBrand?: string;
+  deviceModel?: string;
+  faultDescription: string;
+  statusName: string;
+  estimatedCompletionDate?: string;
+  completedDate?: string;
+  deliveredDate?: string;
+  totalCost: number;
+  paidAmount: number;
+  paymentStatusName: string;
+  createdAt: string;
+  logs: { statusName?: string; description: string; createdAt: string }[];
+  parts: { partName: string; quantity: number; totalCost: number }[];
 }

@@ -4,6 +4,7 @@ using BarcodePos.Application.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BarcodePos.API.Controllers;
 
@@ -23,6 +24,7 @@ public class WebAuthController : ControllerBase
     /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Register(
         [FromBody] WebRegisterRequest request,
         [FromServices] IValidator<WebRegisterRequest> validator)
@@ -49,6 +51,7 @@ public class WebAuthController : ControllerBase
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login(
         [FromBody] WebLoginRequest request,
         [FromServices] IValidator<WebLoginRequest> validator)

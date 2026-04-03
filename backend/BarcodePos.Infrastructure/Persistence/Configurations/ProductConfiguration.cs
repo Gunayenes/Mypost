@@ -1,4 +1,4 @@
-﻿using BarcodePos.Domain.Entities;
+using BarcodePos.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +16,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Description).HasMaxLength(500);
         builder.Property(p => p.CostPrice).HasColumnType("TEXT");
         builder.Property(p => p.SalePrice).HasColumnType("TEXT");
+        builder.Property(p => p.CostPriceUsd).HasColumnType("TEXT");
+        builder.Property(p => p.SalePriceUsd).HasColumnType("TEXT");
+        builder.Property(p => p.ExchangeRate).HasColumnType("TEXT");
         builder.Property(p => p.TaxRate).HasColumnType("TEXT");
 
         // Barkod maÄŸaza bazÄ±nda benzersiz

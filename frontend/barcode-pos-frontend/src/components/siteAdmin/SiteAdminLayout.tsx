@@ -7,6 +7,7 @@ import {
   LogOut,
   Shield,
   KeyRound,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
   { path: '/site-admin/customers', icon: Users, label: 'Müşteriler', end: false },
   { path: '/site-admin/subscriptions', icon: CreditCard, label: 'Abonelikler', end: false },
   { path: '/site-admin/licenses', icon: KeyRound, label: 'Lisanslar', end: false },
+  { path: '/site-admin/settings', icon: Settings, label: 'Ayarlar', end: false },
 ];
 
 export default function SiteAdminLayout() {

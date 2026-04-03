@@ -10,6 +10,9 @@ export const reportsApi = {
   salesReport: (startDate: string, endDate: string) =>
     api.get('/reports/period', { params: { from: startDate, to: endDate } }),
 
+  dailyClosingReport: (date: string) =>
+    api.get('/reports/daily-closing', { params: { date } }),
+
   profitReport: (startDate: string, endDate: string) =>
     api.get('/reports/profit', { params: { from: startDate, to: endDate } }),
 

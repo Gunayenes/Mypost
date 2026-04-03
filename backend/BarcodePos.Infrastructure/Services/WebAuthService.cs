@@ -117,7 +117,7 @@ public class WebAuthService : IWebAuthService
             return Result<WebLoginResponse>.Fail("E-posta veya şifre hatalı.");
 
         if (!customer.IsActive)
-            return Result<WebLoginResponse>.Fail("Hesabınız devre dışı bırakılmıştır.");
+            return Result<WebLoginResponse>.Fail("Hesabınız devre dışı bırakılmıştır. Lütfen yöneticinize başvurun.");
 
         var token = GenerateJwt(customer);
         return Result<WebLoginResponse>.Ok(new WebLoginResponse
@@ -144,7 +144,7 @@ public class WebAuthService : IWebAuthService
         customer.PasswordResetExpiry = DateTime.UtcNow.AddHours(1);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Şifre sıfırlama talebi: {Email}, Token: {Token}", emailLower, customer.PasswordResetToken);
+        _logger.LogInformation("Şifre sıfırlama talebi: {Email}", emailLower);
 
         // TODO: E-posta ile sıfırlama linki gönder
 
@@ -223,7 +223,8 @@ public class WebAuthService : IWebAuthService
     private string GenerateJwt(WebCustomer customer)
     {
         var jwt = _config.GetSection("JwtSettings");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Secret"]!));
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwt["Secret"]!;
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
         var claims = new List<Claim>
         {
@@ -245,7 +246,7 @@ public class WebAuthService : IWebAuthService
     }
 
     private int GetJwtExpiration() =>
-        int.Parse(_config.GetSection("JwtSettings")["ExpirationInMinutes"] ?? "1440");
+        int.Parse(_config.GetSection("JwtSettings")["ExpirationInMinutes"] ?? "30");
 
     private static string GenerateToken() =>
         Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();

@@ -124,6 +124,51 @@ public class ProductService : IProductService
         return Result<List<LowStockProductDto>>.Ok(products);
     }
 
+    public async Task<Result<string>> GenerateBarcodeAsync(int storeId)
+    {
+        // Dahili barkod üretme — EAN-13 uyumlu "20" prefix (GS1 mağaza içi kullanım)
+        // Format: 20 + storeId(2) + sıra(8) + kontrol(1) = 13 haneli
+        var storePrefix = $"20{storeId % 100:D2}";
+
+        // Mevcut en yüksek dahili barkodu bul
+        var lastBarcode = await _context.Products
+            .Where(p => p.StoreId == storeId && p.Barcode.StartsWith(storePrefix))
+            .OrderByDescending(p => p.Barcode)
+            .Select(p => p.Barcode)
+            .FirstOrDefaultAsync();
+
+        long nextSequence = 1;
+        if (lastBarcode != null && lastBarcode.Length == 13
+            && long.TryParse(lastBarcode.Substring(4, 8), out var lastSeq))
+        {
+            nextSequence = lastSeq + 1;
+        }
+
+        var barcodeWithoutCheck = $"{storePrefix}{nextSequence:D8}";
+        var checkDigit = CalculateEan13CheckDigit(barcodeWithoutCheck);
+        var barcode = $"{barcodeWithoutCheck}{checkDigit}";
+
+        // Benzersizlik kontrolü
+        var exists = await _context.Products
+            .AnyAsync(p => p.StoreId == storeId && p.Barcode == barcode);
+        if (exists)
+            return Result<string>.Fail("Barkod üretilirken çakışma oluştu, tekrar deneyin.");
+
+        return Result<string>.Ok(barcode);
+    }
+
+    private static int CalculateEan13CheckDigit(string code12)
+    {
+        var sum = 0;
+        for (var i = 0; i < 12; i++)
+        {
+            var digit = code12[i] - '0';
+            sum += i % 2 == 0 ? digit : digit * 3;
+        }
+        var remainder = sum % 10;
+        return remainder == 0 ? 0 : 10 - remainder;
+    }
+
     public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, int storeId)
     {
         // Barkod benzersizlik kontrolü (mağaza bazında)
@@ -147,8 +192,15 @@ public class ProductService : IProductService
             Barcode = request.Barcode,
             Name = request.Name,
             Description = request.Description,
-            CostPrice = request.CostPrice,
-            SalePrice = request.SalePrice,
+            CostPriceUsd = request.CostPriceUsd,
+            SalePriceUsd = request.SalePriceUsd,
+            ExchangeRate = request.ExchangeRate,
+            CostPrice = request.CostPriceUsd.HasValue && request.ExchangeRate.HasValue
+                ? Math.Round(request.CostPriceUsd.Value * request.ExchangeRate.Value, 2)
+                : request.CostPrice,
+            SalePrice = request.SalePriceUsd.HasValue && request.ExchangeRate.HasValue
+                ? Math.Round(request.SalePriceUsd.Value * request.ExchangeRate.Value, 2)
+                : request.SalePrice,
             TaxRate = request.TaxRate,
             StockQuantity = request.StockQuantity,
             MinStockLevel = request.MinStockLevel,
@@ -191,8 +243,15 @@ public class ProductService : IProductService
         product.Barcode = request.Barcode;
         product.Name = request.Name;
         product.Description = request.Description;
-        product.CostPrice = request.CostPrice;
-        product.SalePrice = request.SalePrice;
+        product.CostPriceUsd = request.CostPriceUsd;
+        product.SalePriceUsd = request.SalePriceUsd;
+        product.ExchangeRate = request.ExchangeRate;
+        product.CostPrice = request.CostPriceUsd.HasValue && request.ExchangeRate.HasValue
+            ? Math.Round(request.CostPriceUsd.Value * request.ExchangeRate.Value, 2)
+            : request.CostPrice;
+        product.SalePrice = request.SalePriceUsd.HasValue && request.ExchangeRate.HasValue
+            ? Math.Round(request.SalePriceUsd.Value * request.ExchangeRate.Value, 2)
+            : request.SalePrice;
         product.TaxRate = request.TaxRate;
         product.MinStockLevel = request.MinStockLevel;
         // NOT: StockQuantity CRUD ile güncellenmez
@@ -229,6 +288,9 @@ public class ProductService : IProductService
         Description = p.Description,
         CostPrice = p.CostPrice,
         SalePrice = p.SalePrice,
+        CostPriceUsd = p.CostPriceUsd,
+        SalePriceUsd = p.SalePriceUsd,
+        ExchangeRate = p.ExchangeRate,
         TaxRate = p.TaxRate,
         StockQuantity = p.StockQuantity,
         MinStockLevel = p.MinStockLevel,

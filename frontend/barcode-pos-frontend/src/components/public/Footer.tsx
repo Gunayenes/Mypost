@@ -6,7 +6,6 @@ const columns = [
     links: [
       { label: 'Özellikler', href: '/ozellikler' },
       { label: 'Fiyatlandırma', href: '/fiyatlandirma' },
-      { label: 'Masaüstü İndir', href: '/indir' },
     ],
   },
   {
@@ -36,9 +35,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-extrabold text-lg leading-none">K</span>
-              </div>
+              <img src="/Logom.jpg" alt="KasaPlus" className="w-9 h-9 rounded-xl object-cover" />
               <span className="text-xl font-bold text-white">
                 Kasa<span className="text-primary-400">Plus</span>
               </span>

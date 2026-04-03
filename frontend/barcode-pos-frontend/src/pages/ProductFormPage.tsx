@@ -18,6 +18,8 @@ import {
   XCircle,
   Search,
   RotateCcw,
+  DollarSign,
+  Zap,
 } from 'lucide-react';
 
 interface ProductForm {
@@ -27,10 +29,15 @@ interface ProductForm {
   categoryId: number;
   costPrice: number;
   salePrice: number;
+  costPriceUsd: number;
+  salePriceUsd: number;
+  exchangeRate: number;
   taxRate: number;
   stockQuantity: number;
   minStockLevel: number;
 }
+
+type CurrencyMode = 'TRY' | 'USD';
 
 const emptyForm: ProductForm = {
   barcode: '',
@@ -39,6 +46,9 @@ const emptyForm: ProductForm = {
   categoryId: 0,
   costPrice: 0,
   salePrice: 0,
+  costPriceUsd: 0,
+  salePriceUsd: 0,
+  exchangeRate: 0,
   taxRate: 18,
   stockQuantity: 0,
   minStockLevel: 5,
@@ -54,6 +64,7 @@ export default function ProductFormPage() {
   const barcodeSearchRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<ProductForm>(emptyForm);
+  const [currencyMode, setCurrencyMode] = useState<CurrencyMode>('TRY');
   const [categories, setCategories] = useState<Category[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [existingProduct, setExistingProduct] = useState<Product | null>(null);
@@ -64,6 +75,7 @@ export default function ProductFormPage() {
   const [error, setError] = useState('');
   const [barcodeSearch, setBarcodeSearch] = useState('');
   const [barcodeStatus, setBarcodeStatus] = useState<'idle' | 'waiting' | 'found' | 'new'>('idle');
+  const [generatingBarcode, setGeneratingBarcode] = useState(false);
 
   // Kategorileri yükle
   useEffect(() => {
@@ -96,10 +108,14 @@ export default function ProductFormPage() {
           categoryId: p.categoryId,
           costPrice: p.costPrice,
           salePrice: p.salePrice,
+          costPriceUsd: p.costPriceUsd ?? 0,
+          salePriceUsd: p.salePriceUsd ?? 0,
+          exchangeRate: p.exchangeRate ?? 0,
           taxRate: p.taxRate,
           stockQuantity: p.stockQuantity,
           minStockLevel: p.minStockLevel,
         });
+        if (p.exchangeRate && p.exchangeRate > 0) setCurrencyMode('USD');
         setBarcodeStatus('found');
         setBarcodeSearch(p.barcode);
         loadMovements(p.id);
@@ -136,10 +152,14 @@ export default function ProductFormPage() {
           categoryId: p.categoryId,
           costPrice: p.costPrice,
           salePrice: p.salePrice,
+          costPriceUsd: p.costPriceUsd ?? 0,
+          salePriceUsd: p.salePriceUsd ?? 0,
+          exchangeRate: p.exchangeRate ?? 0,
           taxRate: p.taxRate,
           stockQuantity: p.stockQuantity,
           minStockLevel: p.minStockLevel,
         });
+        if (p.exchangeRate && p.exchangeRate > 0) setCurrencyMode('USD');
         setBarcodeStatus('found');
         loadMovements(p.id);
         return;
@@ -155,9 +175,34 @@ export default function ProductFormPage() {
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
   };
 
+  // Otomatik barkod oluştur
+  const handleGenerateBarcode = async () => {
+    setError('');
+    setGeneratingBarcode(true);
+    try {
+      const { data: res } = await productsApi.generateBarcode();
+      if (res.success && res.data) {
+        const barcode = res.data;
+        setBarcodeSearch(barcode);
+        setExistingProduct(null);
+        setMovements([]);
+        setForm({ ...emptyForm, barcode, categoryId: categories[0]?.id ?? 0 });
+        setBarcodeStatus('new');
+        setTimeout(() => barcodeInputRef.current?.focus(), 100);
+      } else {
+        setError(res.message ?? 'Barkod oluşturulamadı.');
+      }
+    } catch {
+      setError('Barkod oluşturulurken hata oluştu.');
+    } finally {
+      setGeneratingBarcode(false);
+    }
+  };
+
   // Formu sıfırla
   const handleReset = () => {
     setForm(emptyForm);
+    setCurrencyMode('TRY');
     setExistingProduct(null);
     setMovements([]);
     setBarcodeSearch('');
@@ -194,6 +239,9 @@ export default function ProductFormPage() {
           description: form.description || null,
           costPrice: form.costPrice,
           salePrice: form.salePrice,
+          costPriceUsd: currencyMode === 'USD' && form.costPriceUsd > 0 ? form.costPriceUsd : null,
+          salePriceUsd: currencyMode === 'USD' && form.salePriceUsd > 0 ? form.salePriceUsd : null,
+          exchangeRate: currencyMode === 'USD' && form.exchangeRate > 0 ? form.exchangeRate : null,
           taxRate: form.taxRate,
           minStockLevel: form.minStockLevel,
         });
@@ -212,6 +260,9 @@ export default function ProductFormPage() {
           description: form.description || null,
           costPrice: form.costPrice,
           salePrice: form.salePrice,
+          costPriceUsd: currencyMode === 'USD' && form.costPriceUsd > 0 ? form.costPriceUsd : null,
+          salePriceUsd: currencyMode === 'USD' && form.salePriceUsd > 0 ? form.salePriceUsd : null,
+          exchangeRate: currencyMode === 'USD' && form.exchangeRate > 0 ? form.exchangeRate : null,
           taxRate: form.taxRate,
           stockQuantity: form.stockQuantity,
           minStockLevel: form.minStockLevel,
@@ -290,6 +341,20 @@ export default function ProductFormPage() {
           >
             <Search size={18} /> Ürünü Getir
           </button>
+          <button
+            type="button"
+            onClick={handleGenerateBarcode}
+            disabled={generatingBarcode}
+            className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition disabled:opacity-50 whitespace-nowrap"
+            title="Barkodsuz ürün için otomatik barkod oluştur"
+          >
+            {generatingBarcode ? (
+              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+            ) : (
+              <Zap size={18} />
+            )}
+            Barkod Oluştur
+          </button>
         </form>
 
         {/* Barkod durumu */}
@@ -307,7 +372,7 @@ export default function ProductFormPage() {
           )}
           {barcodeStatus === 'new' && (
             <span className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full font-medium flex items-center gap-1">
-              <Info size={12} /> {form.barcode} — Yeni ürün oluşturulacak
+              <Info size={12} /> {form.barcode} — {form.barcode.startsWith('20') && form.barcode.length === 13 ? 'Otomatik barkod oluşturuldu' : 'Yeni ürün oluşturulacak'}
             </span>
           )}
         </div>
@@ -406,44 +471,173 @@ export default function ProductFormPage() {
                   </div>
                 </div>
 
-                {/* Satır 2: Fiyatlar */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">
-                      Satış Fiyatı (KDV Hariç)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={form.salePrice || ''}
-                        onChange={(e) => setForm({ ...form, salePrice: +e.target.value })}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:border-blue-500 outline-none"
-                        min={0}
-                        required
-                      />
+                {/* Satır 2: Para Birimi Seçimi + Fiyatlar */}
+                <div className="space-y-4">
+                  {/* Para Birimi Toggle */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-gray-600">Para Birimi:</span>
+                    <div className="flex bg-gray-100 rounded-lg p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrencyMode('TRY');
+                          setForm(f => ({ ...f, costPriceUsd: 0, salePriceUsd: 0, exchangeRate: 0 }));
+                        }}
+                        className={`px-4 py-1.5 rounded-md text-xs font-bold transition ${
+                          currencyMode === 'TRY'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        ₺ TL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrencyMode('USD')}
+                        className={`flex items-center gap-1 px-4 py-1.5 rounded-md text-xs font-bold transition ${
+                          currencyMode === 'USD'
+                            ? 'bg-white text-green-700 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <DollarSign size={12} /> USD
+                      </button>
                     </div>
+                    {currencyMode === 'USD' && form.exchangeRate > 0 && (
+                      <span className="text-xs text-gray-500">
+                        1$ = {form.exchangeRate.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">
-                      Alış Fiyatı (KDV Hariç)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={form.costPrice || ''}
-                        onChange={(e) => setForm({ ...form, costPrice: +e.target.value })}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:border-blue-500 outline-none"
-                        min={0}
-                        required
-                      />
+
+                  {/* Dolar Kuru ve USD Fiyatları */}
+                  {currencyMode === 'USD' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-semibold text-green-800 mb-1.5">
+                            <DollarSign size={13} /> Döviz Kuru (1 USD)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500">₺</span>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={form.exchangeRate || ''}
+                              onChange={(e) => {
+                                const rate = +e.target.value;
+                                setForm(f => ({
+                                  ...f,
+                                  exchangeRate: rate,
+                                  costPrice: f.costPriceUsd > 0 && rate > 0 ? Math.round(f.costPriceUsd * rate * 100) / 100 : f.costPrice,
+                                  salePrice: f.salePriceUsd > 0 && rate > 0 ? Math.round(f.salePriceUsd * rate * 100) / 100 : f.salePrice,
+                                }));
+                              }}
+                              placeholder="38.50"
+                              className="w-full pl-7 pr-3 py-2.5 border border-green-300 rounded-lg text-sm font-medium focus:border-green-500 outline-none bg-white"
+                              min={0}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-green-800 mb-1.5 block">
+                            Satış Fiyatı (USD)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={form.salePriceUsd || ''}
+                              onChange={(e) => {
+                                const usd = +e.target.value;
+                                setForm(f => ({
+                                  ...f,
+                                  salePriceUsd: usd,
+                                  salePrice: usd > 0 && f.exchangeRate > 0 ? Math.round(usd * f.exchangeRate * 100) / 100 : f.salePrice,
+                                }));
+                              }}
+                              placeholder="0.00"
+                              className="w-full pl-7 pr-3 py-2.5 border border-green-300 rounded-lg text-sm font-medium focus:border-green-500 outline-none bg-white"
+                              min={0}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-green-800 mb-1.5 block">
+                            Alış Fiyatı (USD)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={form.costPriceUsd || ''}
+                              onChange={(e) => {
+                                const usd = +e.target.value;
+                                setForm(f => ({
+                                  ...f,
+                                  costPriceUsd: usd,
+                                  costPrice: usd > 0 && f.exchangeRate > 0 ? Math.round(usd * f.exchangeRate * 100) / 100 : f.costPrice,
+                                }));
+                              }}
+                              placeholder="0.00"
+                              className="w-full pl-7 pr-3 py-2.5 border border-green-300 rounded-lg text-sm font-medium focus:border-green-500 outline-none bg-white"
+                              min={0}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* TL Fiyatları */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1.5 block">
+                        Satış Fiyatı (KDV Hariç) {currencyMode === 'USD' && '— Hesaplanan'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={form.salePrice || ''}
+                          onChange={(e) => setForm({ ...form, salePrice: +e.target.value })}
+                          placeholder="0.00"
+                          className={`w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:border-blue-500 outline-none ${
+                            currencyMode === 'USD' ? 'bg-gray-50 text-gray-700' : ''
+                          }`}
+                          min={0}
+                          required
+                          readOnly={currencyMode === 'USD'}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1.5 block">
+                        Alış Fiyatı (KDV Hariç) {currencyMode === 'USD' && '— Hesaplanan'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={form.costPrice || ''}
+                          onChange={(e) => setForm({ ...form, costPrice: +e.target.value })}
+                          placeholder="0.00"
+                          className={`w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:border-blue-500 outline-none ${
+                            currencyMode === 'USD' ? 'bg-gray-50 text-gray-700' : ''
+                          }`}
+                          min={0}
+                          required
+                          readOnly={currencyMode === 'USD'}
+                        />
+                      </div>
+                    </div>
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
                       <TrendingUp size={13} /> Kâr Oranı
@@ -473,14 +667,15 @@ export default function ProductFormPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                  </div>
 
-                {/* KDV Dahil gösterge */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-blue-700">KDV Dahil Satış Fiyatı</span>
-                  <span className="text-lg font-black text-blue-800 tabular-nums">
-                    ₺{salePriceWithTax.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                  {/* KDV Dahil gösterge */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-blue-700">KDV Dahil Satış Fiyatı</span>
+                    <span className="text-lg font-black text-blue-800 tabular-nums">
+                      ₺{salePriceWithTax.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Satır 3: Kategori, Barkod */}

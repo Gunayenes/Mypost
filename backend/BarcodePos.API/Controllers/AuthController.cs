@@ -4,6 +4,7 @@ using BarcodePos.Application.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BarcodePos.API.Controllers;
 
@@ -22,6 +23,7 @@ public class AuthController : ControllerBase
     /// Kullanıcı girişi — JWT token döndürür.
     /// </summary>
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
         [FromServices] IValidator<LoginRequest> validator)

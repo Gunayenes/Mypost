@@ -10,6 +10,7 @@ public interface IProductService
     Task<Result<ProductDto>> GetByBarcodeAsync(string barcode, int storeId);
     Task<Result<List<ProductDto>>> SearchAsync(string query, int storeId);
     Task<Result<List<LowStockProductDto>>> GetLowStockAsync(int storeId);
+    Task<Result<string>> GenerateBarcodeAsync(int storeId);
     Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, int storeId);
     Task<Result<ProductDto>> UpdateAsync(int id, UpdateProductRequest request, int storeId);
     Task<Result> DeleteAsync(int id, int storeId);

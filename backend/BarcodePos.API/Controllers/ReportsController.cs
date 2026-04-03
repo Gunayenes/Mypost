@@ -29,6 +29,14 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("daily-closing")]
+    public async Task<IActionResult> GetDailyClosingReport([FromQuery] DateTime? date)
+    {
+        var reportDate = date ?? DateTime.UtcNow.Date;
+        var result = await _reportService.GetDailyClosingReportAsync(reportDate, _currentUser.StoreId);
+        return Ok(result);
+    }
+
     [HttpGet("period")]
     public async Task<IActionResult> GetPeriodReport([FromQuery] DateTime from, [FromQuery] DateTime to)
     {
@@ -80,6 +88,10 @@ public class ReportsController : ControllerBase
                 fileBytes = await _excelExportService.ExportSalesAsync(dateFrom, dateTo, _currentUser.StoreId);
                 fileName = $"satis-raporu-{dateFrom:yyyyMMdd}-{dateTo:yyyyMMdd}.xlsx";
                 break;
+            case "daily-closing":
+                fileBytes = await _excelExportService.ExportDailyClosingAsync(dateFrom, _currentUser.StoreId);
+                fileName = $"gun-sonu-raporu-{dateFrom:yyyyMMdd}.xlsx";
+                break;
             case "low-stock":
                 fileBytes = await _excelExportService.ExportLowStockAsync(_currentUser.StoreId);
                 fileName = $"dusuk-stok-{DateTime.UtcNow:yyyyMMdd}.xlsx";
@@ -95,7 +107,7 @@ public class ReportsController : ControllerBase
                 fileName = $"kar-raporu-{dateFrom:yyyyMMdd}-{dateTo:yyyyMMdd}.xlsx";
                 break;
             default:
-                return BadRequest(new { success = false, message = "Geçersiz rapor tipi. Geçerli: sales, low-stock, top-products, profit" });
+                return BadRequest(new { success = false, message = "Geçersiz rapor tipi. Geçerli: sales, daily-closing, low-stock, top-products, profit" });
         }
 
         return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);

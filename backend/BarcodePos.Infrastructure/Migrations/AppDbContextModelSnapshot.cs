@@ -199,11 +199,17 @@ namespace BarcodePos.Infrastructure.Migrations
                     b.Property<decimal>("CostPrice")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal?>("CostPriceUsd")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("ExchangeRate")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
@@ -218,6 +224,9 @@ namespace BarcodePos.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("SalePrice")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("SalePriceUsd")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("StockQuantity")
@@ -652,6 +661,201 @@ namespace BarcodePos.Infrastructure.Migrations
                     b.HasIndex("SaleId");
 
                     b.ToTable("SaleItems", (string)null);
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServiceLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsInternal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("NewStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("OldStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ServiceRecordId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceRecordId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ServiceLogs", (string)null);
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServicePart", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("DeductedFromStock")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PartName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ServiceRecordId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ServiceRecordId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ServiceParts", (string)null);
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServiceRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AssignedUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CustomerNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeliveredDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceAccessories")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceBrand")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceCondition")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceSerial")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EstimatedCompletionDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FaultDescription")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("LaborCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PartsCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReceivedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ServiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedUserId");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("ReceivedByUserId");
+
+                    b.HasIndex("ServiceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("StoreId", "CustomerId");
+
+                    b.HasIndex("StoreId", "Status");
+
+                    b.ToTable("ServiceRecords", (string)null);
                 });
 
             modelBuilder.Entity("BarcodePos.Domain.Entities.StockMovement", b =>
@@ -1100,6 +1304,85 @@ namespace BarcodePos.Infrastructure.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServiceLog", b =>
+                {
+                    b.HasOne("BarcodePos.Domain.Entities.ServiceRecord", "ServiceRecord")
+                        .WithMany("Logs")
+                        .HasForeignKey("ServiceRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BarcodePos.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ServiceRecord");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServicePart", b =>
+                {
+                    b.HasOne("BarcodePos.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BarcodePos.Domain.Entities.ServiceRecord", "ServiceRecord")
+                        .WithMany("Parts")
+                        .HasForeignKey("ServiceRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BarcodePos.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ServiceRecord");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServiceRecord", b =>
+                {
+                    b.HasOne("BarcodePos.Domain.Entities.User", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BarcodePos.Domain.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BarcodePos.Domain.Entities.User", "ReceivedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReceivedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BarcodePos.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("ReceivedByUser");
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("BarcodePos.Domain.Entities.StockMovement", b =>
                 {
                     b.HasOne("BarcodePos.Domain.Entities.Product", "Product")
@@ -1184,6 +1467,13 @@ namespace BarcodePos.Infrastructure.Migrations
                     b.Navigation("CustomerTransactions");
 
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("BarcodePos.Domain.Entities.ServiceRecord", b =>
+                {
+                    b.Navigation("Logs");
+
+                    b.Navigation("Parts");
                 });
 
             modelBuilder.Entity("BarcodePos.Domain.Entities.Store", b =>

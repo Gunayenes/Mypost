@@ -15,7 +15,10 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Şifre zorunludur.")
-            .MinimumLength(6).WithMessage("Şifre en az 6 karakter olmalıdır.");
+            .MinimumLength(8).WithMessage("Şifre en az 8 karakter olmalıdır.")
+            .Matches(@"[A-Z]").WithMessage("Şifre en az bir büyük harf içermelidir.")
+            .Matches(@"[a-z]").WithMessage("Şifre en az bir küçük harf içermelidir.")
+            .Matches(@"\d").WithMessage("Şifre en az bir rakam içermelidir.");
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Ad soyad zorunludur.")

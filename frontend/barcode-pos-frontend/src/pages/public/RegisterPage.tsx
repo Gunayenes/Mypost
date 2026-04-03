@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { webAuthApi } from '@/api/webAuth';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
-import { ScanBarcode, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -86,7 +86,7 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-violet-600 rounded-xl flex items-center justify-center mb-3 shadow-lg shadow-primary-600/25">
-            <ScanBarcode className="text-white" size={28} />
+            <img src="/Logom.jpg" alt="KasaPlus" className="w-full h-full rounded-xl object-cover" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Ücretsiz Deneyin</h1>
           <p className="text-sm text-gray-500 mt-1">14 gün ücretsiz, kredi kartı gerektirmez</p>

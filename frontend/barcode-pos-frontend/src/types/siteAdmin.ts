@@ -16,7 +16,17 @@ export interface SiteAdminDashboard {
   activeSubscriptions: number;
   expiringIn7Days: number;
   totalStores: number;
+  passwordResetRequests: number;
   recentCustomers: RecentCustomerItem[];
+}
+
+export interface PasswordResetRequestItem {
+  customerId: number;
+  email: string;
+  fullName: string;
+  businessName: string;
+  requestedAt: string;
+  expiresAt: string;
 }
 
 export interface RecentCustomerItem {
@@ -108,4 +118,38 @@ export interface CreateLicenseRequest {
 export interface RenewLicenseRequest {
   durationDays: number;
   password?: string;
+}
+
+export interface SystemInfo {
+  apiVersion: string;
+  environment: string;
+  serverTime: string;
+  mainDbSize: number;
+  licenseDbSize: number;
+  jwtSecretConfigured: boolean;
+  adminEmailConfigured: boolean;
+  adminPasswordConfigured: boolean;
+  allowedOriginsConfigured: boolean;
+  totalLicenses: number;
+  activeLicenses: number;
+}
+
+export interface UpdateSiteAdminCustomerRequest {
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone?: string;
+  isActive: boolean;
+  emailConfirmed: boolean;
+}
+
+export interface CreateSiteAdminCustomerRequest {
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone?: string;
+  password: string;
+  planId?: number;
 }

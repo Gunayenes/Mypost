@@ -24,6 +24,11 @@ public class AppDbContext : DbContext
     public DbSet<CustomerTransaction> CustomerTransactions => Set<CustomerTransaction>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
 
+    // Servis modülü
+    public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
+    public DbSet<ServiceLog> ServiceLogs => Set<ServiceLog>();
+    public DbSet<ServicePart> ServiceParts => Set<ServicePart>();
+
     // Web platform
     public DbSet<WebCustomer> WebCustomers => Set<WebCustomer>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();

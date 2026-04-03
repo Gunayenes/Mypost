@@ -4,6 +4,8 @@ using System.Text;
 using BarcodePos.Application.Common;
 using BarcodePos.Application.DTOs.Web;
 using BarcodePos.Application.Interfaces;
+using BarcodePos.Domain.Entities;
+using BarcodePos.Domain.Enums;
 using BarcodePos.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,8 +29,16 @@ public class SiteAdminService : ISiteAdminService
 
     public Task<Result<SiteAdminLoginResponse>> LoginAsync(SiteAdminLoginRequest request)
     {
-        var adminEmail = _config["SiteAdmin:Email"] ?? "admin@kasaplus.com";
-        var adminPassword = _config["SiteAdmin:Password"] ?? "KasaPlus2024!";
+        var adminEmail = Environment.GetEnvironmentVariable("SITE_ADMIN_EMAIL")
+                         ?? _config["SiteAdmin:Email"];
+        var adminPassword = Environment.GetEnvironmentVariable("SITE_ADMIN_PASSWORD")
+                            ?? _config["SiteAdmin:Password"];
+
+        if (string.IsNullOrEmpty(adminEmail) || string.IsNullOrEmpty(adminPassword))
+        {
+            _logger.LogError("Site admin kimlik bilgileri yapılandırılmamış. SITE_ADMIN_EMAIL/PASSWORD env var veya SiteAdmin config ayarlayın.");
+            return Task.FromResult(Result<SiteAdminLoginResponse>.Fail("Sistem yapılandırma hatası."));
+        }
 
         if (!string.Equals(request.Email, adminEmail, StringComparison.OrdinalIgnoreCase) ||
             request.Password != adminPassword)
@@ -37,7 +47,8 @@ public class SiteAdminService : ISiteAdminService
         }
 
         var jwt = _config.GetSection("JwtSettings");
-        var expMinutes = int.Parse(jwt["ExpirationInMinutes"] ?? "480");
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwt["Secret"]!;
+        var expMinutes = int.Parse(jwt["ExpirationInMinutes"] ?? "30");
         var expiresAt = DateTime.UtcNow.AddMinutes(expMinutes);
 
         var claims = new List<Claim>
@@ -48,7 +59,7 @@ public class SiteAdminService : ISiteAdminService
             new("FullName", "Site Yöneticisi")
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Secret"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
             issuer: jwt["Issuer"],
@@ -79,6 +90,9 @@ public class SiteAdminService : ISiteAdminService
         var expiring = await _db.Subscriptions.CountAsync(s => s.IsActive && s.ExpiresAt > now && s.ExpiresAt <= in7Days);
         var totalStores = await _db.Stores.CountAsync();
 
+        var passwordResetRequests = await _db.WebCustomers
+            .CountAsync(c => c.PasswordResetToken != null && c.PasswordResetExpiry > now);
+
         var recentCustomers = await _db.WebCustomers
             .OrderByDescending(c => c.CreatedAt)
             .Take(5)
@@ -100,6 +114,7 @@ public class SiteAdminService : ISiteAdminService
             ActiveSubscriptions = activeSubs,
             ExpiringIn7Days = expiring,
             TotalStores = totalStores,
+            PasswordResetRequests = passwordResetRequests,
             RecentCustomers = recentCustomers
         });
     }
@@ -197,6 +212,76 @@ public class SiteAdminService : ISiteAdminService
         });
     }
 
+    public async Task<Result<SiteAdminCustomerDetail>> CreateCustomerAsync(CreateSiteAdminCustomerRequest request)
+    {
+        var emailLower = request.Email.Trim().ToLowerInvariant();
+
+        if (await _db.WebCustomers.AnyAsync(c => c.Email == emailLower))
+            return Result<SiteAdminCustomerDetail>.Fail("Bu e-posta adresi zaten kayıtlı.");
+
+        // 1. Mağaza oluştur
+        var store = new Store
+        {
+            Name = request.BusinessName.Trim(),
+            Phone = request.Phone?.Trim(),
+            IsActive = true
+        };
+        _db.Stores.Add(store);
+        await _db.SaveChangesAsync();
+
+        // 2. Web müşteri oluştur
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var customer = new WebCustomer
+        {
+            Email = emailLower,
+            PasswordHash = passwordHash,
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
+            BusinessName = request.BusinessName.Trim(),
+            Phone = request.Phone?.Trim(),
+            EmailConfirmed = true,
+            IsActive = true,
+            StoreId = store.Id
+        };
+        _db.WebCustomers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        // 3. POS admin kullanıcı oluştur
+        var posUser = new User
+        {
+            StoreId = store.Id,
+            Username = emailLower,
+            PasswordHash = passwordHash,
+            FullName = $"{request.FirstName.Trim()} {request.LastName.Trim()}",
+            Role = UserRole.Admin,
+            IsActive = true
+        };
+        _db.Users.Add(posUser);
+
+        // 4. Abonelik oluştur
+        var plan = request.PlanId.HasValue
+            ? await _db.SubscriptionPlans.FindAsync(request.PlanId.Value)
+            : await _db.SubscriptionPlans.FirstOrDefaultAsync(p => p.Slug == "demo");
+
+        if (plan is not null)
+        {
+            _db.Subscriptions.Add(new Subscription
+            {
+                WebCustomerId = customer.Id,
+                PlanId = plan.Id,
+                StartsAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(plan.DurationDays),
+                IsActive = true
+            });
+        }
+
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Site admin yeni müşteri oluşturdu: {Email}", emailLower);
+
+        return await GetCustomerDetailAsync(customer.Id);
+    }
+
     public async Task<Result> ToggleCustomerActiveAsync(int customerId)
     {
         var customer = await _db.WebCustomers.FindAsync(customerId);
@@ -204,10 +289,64 @@ public class SiteAdminService : ISiteAdminService
             return Result.Fail("Müşteri bulunamadı.");
 
         customer.IsActive = !customer.IsActive;
+
+        // Mağazadaki POS kullanıcılarını da aynı duruma getir
+        var posUsers = await _db.Users
+            .Where(u => u.StoreId == customer.StoreId)
+            .ToListAsync();
+        foreach (var posUser in posUsers)
+            posUser.IsActive = customer.IsActive;
+
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Müşteri {Id} durumu değiştirildi: {IsActive}", customerId, customer.IsActive);
         return Result.Ok(customer.IsActive ? "Müşteri aktifleştirildi." : "Müşteri devre dışı bırakıldı.");
+    }
+
+    public async Task<Result> UpdateCustomerAsync(int customerId, UpdateSiteAdminCustomerRequest request)
+    {
+        var customer = await _db.WebCustomers.FindAsync(customerId);
+        if (customer is null)
+            return Result.Fail("Müşteri bulunamadı.");
+
+        // E-posta değiştiyse benzersizlik kontrolü
+        if (!string.Equals(customer.Email, request.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            var exists = await _db.WebCustomers.AnyAsync(c => c.Email == request.Email && c.Id != customerId);
+            if (exists)
+                return Result.Fail("Bu e-posta adresi başka bir müşteri tarafından kullanılıyor.");
+        }
+
+        customer.FirstName = request.FirstName.Trim();
+        customer.LastName = request.LastName.Trim();
+        customer.BusinessName = request.BusinessName.Trim();
+        customer.Email = request.Email.Trim();
+        customer.Phone = request.Phone?.Trim();
+        customer.IsActive = request.IsActive;
+        customer.EmailConfirmed = request.EmailConfirmed;
+
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Müşteri {Id} güncellendi: {Email}", customerId, customer.Email);
+        return Result.Ok("Müşteri bilgileri güncellendi.");
+    }
+
+    public async Task<Result> ResetCustomerPasswordAsync(int customerId, string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+            return Result.Fail("Şifre en az 6 karakter olmalıdır.");
+
+        var customer = await _db.WebCustomers.FindAsync(customerId);
+        if (customer is null)
+            return Result.Fail("Müşteri bulunamadı.");
+
+        customer.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        customer.PasswordResetToken = null;
+        customer.PasswordResetExpiry = null;
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Müşteri {Id} şifresi sıfırlandı", customerId);
+        return Result.Ok("Şifre başarıyla sıfırlandı.");
     }
 
     public async Task<Result<PagedResult<SiteAdminSubscriptionItem>>> GetSubscriptionsAsync(string? filter, int page, int pageSize)
@@ -278,5 +417,88 @@ public class SiteAdminService : ISiteAdminService
 
         _logger.LogInformation("Abonelik {Id} iptal edildi.", subscriptionId);
         return Result.Ok("Abonelik iptal edildi.");
+    }
+
+    public async Task<Result<List<PasswordResetRequestItem>>> GetPasswordResetRequestsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var items = await _db.WebCustomers
+            .AsNoTracking()
+            .Where(c => c.PasswordResetToken != null && c.PasswordResetExpiry > now)
+            .OrderByDescending(c => c.PasswordResetExpiry)
+            .Select(c => new PasswordResetRequestItem
+            {
+                CustomerId = c.Id,
+                Email = c.Email,
+                FullName = $"{c.FirstName} {c.LastName}",
+                BusinessName = c.BusinessName,
+                RequestedAt = c.PasswordResetExpiry!.Value.AddHours(-1), // token 1 saat geçerli
+                ExpiresAt = c.PasswordResetExpiry!.Value
+            })
+            .ToListAsync();
+
+        return Result<List<PasswordResetRequestItem>>.Ok(items);
+    }
+
+    public async Task<Result> DismissPasswordResetRequestAsync(int customerId)
+    {
+        var customer = await _db.WebCustomers.FindAsync(customerId);
+        if (customer is null)
+            return Result.Fail("Müşteri bulunamadı.");
+
+        customer.PasswordResetToken = null;
+        customer.PasswordResetExpiry = null;
+        await _db.SaveChangesAsync();
+
+        return Result.Ok("Talep kaldırıldı.");
+    }
+
+    public Result ChangeAdminPassword(string currentPassword, string newPassword)
+    {
+        var adminPassword = Environment.GetEnvironmentVariable("SITE_ADMIN_PASSWORD")
+                            ?? _config["SiteAdmin:Password"];
+
+        if (string.IsNullOrEmpty(adminPassword))
+            return Result.Fail("Admin şifresi yapılandırılmamış.");
+
+        if (currentPassword != adminPassword)
+            return Result.Fail("Mevcut şifre hatalı.");
+
+        // Config dosyasını güncelle
+        var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+        if (File.Exists(configPath))
+        {
+            var json = File.ReadAllText(configPath);
+            var doc = System.Text.Json.JsonDocument.Parse(json);
+            using var stream = new MemoryStream();
+            using (var writer = new System.Text.Json.Utf8JsonWriter(stream, new System.Text.Json.JsonWriterOptions { Indented = true }))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (prop.Name == "SiteAdmin")
+                    {
+                        writer.WriteStartObject("SiteAdmin");
+                        foreach (var sp in prop.Value.EnumerateObject())
+                        {
+                            if (sp.Name == "Password")
+                                writer.WriteString("Password", newPassword);
+                            else
+                                sp.WriteTo(writer);
+                        }
+                        writer.WriteEndObject();
+                    }
+                    else
+                    {
+                        prop.WriteTo(writer);
+                    }
+                }
+                writer.WriteEndObject();
+            }
+            File.WriteAllBytes(configPath, stream.ToArray());
+        }
+
+        _logger.LogInformation("Site admin şifresi değiştirildi.");
+        return Result.Ok("Şifre başarıyla değiştirildi. Sunucu yeniden başlatıldığında yeni şifre aktif olur.");
     }
 }

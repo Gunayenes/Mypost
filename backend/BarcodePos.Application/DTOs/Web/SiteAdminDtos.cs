@@ -23,6 +23,7 @@ public class SiteAdminDashboardResponse
     public int ActiveSubscriptions { get; set; }
     public int ExpiringIn7Days { get; set; }
     public int TotalStores { get; set; }
+    public int PasswordResetRequests { get; set; }
     public List<RecentCustomerItem> RecentCustomers { get; set; } = [];
 }
 
@@ -137,4 +138,48 @@ public class RenewLicenseRequest
 {
     public int DurationDays { get; set; } = 365;
     public string? Password { get; set; }
+}
+
+public class UpdateSiteAdminCustomerRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string BusinessName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public bool IsActive { get; set; }
+    public bool EmailConfirmed { get; set; }
+}
+
+public class ChangeAdminPasswordRequest
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class ResetCustomerPasswordRequest
+{
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+// ── Password Reset Requests ──
+public class PasswordResetRequestItem
+{
+    public int CustomerId { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string BusinessName { get; set; } = string.Empty;
+    public DateTime RequestedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
+}
+
+public class CreateSiteAdminCustomerRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string BusinessName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string Password { get; set; } = string.Empty;
+    public int? PlanId { get; set; }
 }

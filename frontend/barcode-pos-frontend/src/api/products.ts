@@ -11,6 +11,9 @@ export const productsApi = {
   getByBarcode: (barcode: string) =>
     api.get<ApiResult<Product>>(`/products/barcode/${barcode}`),
 
+  generateBarcode: () =>
+    api.get<ApiResult<string>>('/products/generate-barcode'),
+
   search: (q: string) =>
     api.get<ApiResult<Product[]>>('/products/search', { params: { q } }),
 

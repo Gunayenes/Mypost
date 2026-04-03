@@ -52,9 +52,10 @@ public partial class BackupService : IBackupService
             // WAL modundaki bekleyen yazımları ana dosyaya aktar
             await _context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
 
-            // VACUUM INTO ile tutarlı bir kopya oluştur
-#pragma warning disable EF1002 // backupPath kullanıcı girdisi değil, güvenli
-            await _context.Database.ExecuteSqlRawAsync($"VACUUM INTO '{backupPath}';");
+            // VACUUM INTO ile tutarlı bir kopya oluştur — tek tırnak escape ile SQL injection engellenir
+            var sanitizedPath = backupPath.Replace("'", "''");
+#pragma warning disable EF1002 // backupPath kullanıcı girdisi değil, timestamp'ten üretilir
+            await _context.Database.ExecuteSqlRawAsync($"VACUUM INTO '{sanitizedPath}';");
 #pragma warning restore EF1002
 
             var fileInfo = new FileInfo(backupPath);

@@ -79,6 +79,19 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
+    /// Yeni ürün için dahili barkod oluştur (EAN-13 uyumlu). Yonetici+
+    /// </summary>
+    [Authorize(Roles = "Admin,Yonetici")]
+    [HttpGet("generate-barcode")]
+    public async Task<IActionResult> GenerateBarcode()
+    {
+        var result = await _productService.GenerateBarcodeAsync(_currentUser.StoreId);
+        if (!result.Success)
+            return Conflict(new { success = false, message = result.Message });
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Yeni ürün oluştur. Yonetici+
     /// </summary>
     [Authorize(Roles = "Admin,Yonetici")]

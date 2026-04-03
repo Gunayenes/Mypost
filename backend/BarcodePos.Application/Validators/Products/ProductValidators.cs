@@ -24,6 +24,22 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         RuleFor(x => x.CostPrice)
             .GreaterThanOrEqualTo(0).WithMessage("Maliyet fiyatı 0 veya üzeri olmalıdır.");
 
+        RuleFor(x => x.CostPriceUsd)
+            .GreaterThan(0).When(x => x.CostPriceUsd.HasValue)
+            .WithMessage("Dolar maliyet fiyatı 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.SalePriceUsd)
+            .GreaterThan(0).When(x => x.SalePriceUsd.HasValue)
+            .WithMessage("Dolar satış fiyatı 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.ExchangeRate)
+            .GreaterThan(0).When(x => x.ExchangeRate.HasValue)
+            .WithMessage("Döviz kuru 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.ExchangeRate)
+            .NotNull().When(x => x.CostPriceUsd.HasValue || x.SalePriceUsd.HasValue)
+            .WithMessage("Dolar fiyatı girildiğinde döviz kuru zorunludur.");
+
         RuleFor(x => x.TaxRate)
             .InclusiveBetween(0, 100).WithMessage("KDV oranı 0 ile 100 arasında olmalıdır (örn: 18).");
 
@@ -55,6 +71,22 @@ public class UpdateProductRequestValidator : AbstractValidator<UpdateProductRequ
 
         RuleFor(x => x.CostPrice)
             .GreaterThanOrEqualTo(0).WithMessage("Maliyet fiyatı 0 veya üzeri olmalıdır.");
+
+        RuleFor(x => x.CostPriceUsd)
+            .GreaterThan(0).When(x => x.CostPriceUsd.HasValue)
+            .WithMessage("Dolar maliyet fiyatı 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.SalePriceUsd)
+            .GreaterThan(0).When(x => x.SalePriceUsd.HasValue)
+            .WithMessage("Dolar satış fiyatı 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.ExchangeRate)
+            .GreaterThan(0).When(x => x.ExchangeRate.HasValue)
+            .WithMessage("Döviz kuru 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.ExchangeRate)
+            .NotNull().When(x => x.CostPriceUsd.HasValue || x.SalePriceUsd.HasValue)
+            .WithMessage("Dolar fiyatı girildiğinde döviz kuru zorunludur.");
 
         RuleFor(x => x.TaxRate)
             .InclusiveBetween(0, 100).WithMessage("KDV oranı 0 ile 100 arasında olmalıdır.");

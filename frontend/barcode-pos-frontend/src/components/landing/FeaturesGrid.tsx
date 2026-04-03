@@ -6,7 +6,7 @@ import {
   Tags,
   HardDrive,
   UserCog,
-  Monitor,
+  Wrench,
 } from 'lucide-react';
 import FadeIn from '@/components/common/FadeIn';
 
@@ -54,9 +54,9 @@ const features = [
     color: 'bg-orange-50 text-orange-600',
   },
   {
-    icon: Monitor,
-    title: 'Masaüstü Uygulama',
-    desc: 'Windows masaüstü uygulaması. İnternet olmadan da çalışır, otomatik güncelleme.',
+    icon: Wrench,
+    title: 'Servis Takip',
+    desc: 'Teknik servis ve tamir kayıtları, parça takibi, müşteri bilgilendirme sistemi.',
     color: 'bg-indigo-50 text-indigo-600',
   },
 ];

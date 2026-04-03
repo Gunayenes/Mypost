@@ -6,7 +6,7 @@ import { HelpCircle } from 'lucide-react';
 const faqs = [
   {
     q: 'Demo sürümünde ne kadar süre kullanabilirim?',
-    a: '14 gün boyunca tüm özellikleri ücretsiz kullanabilirsiniz. Kredi kartı bilgisi gerektirmez.',
+    a: '14 gün boyunca sistemi ücretsiz deneyebilirsiniz. Demo süresinde 50 ürün ve 1 kullanıcı ile çalışabilirsiniz. Kredi kartı bilgisi gerektirmez.',
   },
   {
     q: 'Ödeme yöntemleri nelerdir?',
@@ -18,15 +18,15 @@ const faqs = [
   },
   {
     q: 'Verilerim güvende mi?',
-    a: 'Evet, tüm verileriniz şifreli olarak yerel veritabanında saklanır. Otomatik yedekleme ile veri kaybı riski minimuma indirilir.',
+    a: 'Evet, tüm verileriniz güvenli sunucularda şifreli olarak saklanır. Profesyonel planda otomatik yedekleme ile veri kaybı riski minimuma indirilir.',
   },
   {
-    q: 'Masaüstü uygulaması internet olmadan çalışır mı?',
-    a: 'Evet, masaüstü uygulaması yerel veritabanı ile çalışır. İnternet bağlantısı sadece güncelleme ve lisans doğrulama için gerekir.',
+    q: 'Servis takip modülü nedir?',
+    a: 'Teknik servis, tamir ve bakım hizmeti veren işletmeler için servis kayıtlarını, parça takibini ve müşteri bilgilendirmesini yönetebileceğiniz bir modüldür.',
   },
   {
-    q: 'Kaç cihazda kullanabilirim?',
-    a: 'Her lisans tek bir cihaza bağlıdır. Birden fazla cihaz için ek lisans satın almanız gerekir.',
+    q: 'Kaç kullanıcı ekleyebilirim?',
+    a: 'Demo planda 1, Profesyonel planda 3 kullanıcı tanımlayabilirsiniz. Kurumsal plan ile sınırsız kullanıcı ve çoklu şube desteği alabilirsiniz.',
   },
 ];
 

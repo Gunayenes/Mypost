@@ -1,15 +1,32 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { siteAdminApi } from '@/api/siteAdmin';
 import type { SiteAdminCustomerListItem } from '@/types/siteAdmin';
-import { Search, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight, Eye, Plus, X } from 'lucide-react';
+
+const emptyForm = {
+  firstName: '',
+  lastName: '',
+  businessName: '',
+  email: '',
+  phone: '',
+  password: '',
+};
 
 export default function SiteAdminCustomersPage() {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<SiteAdminCustomerListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const pageSize = 15;
+
+  // Create modal state
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState(emptyForm);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,11 +56,44 @@ export default function SiteAdminCustomersPage() {
     load();
   };
 
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError('');
+    setCreateLoading(true);
+    try {
+      const { data: res } = await siteAdminApi.createCustomer({
+        ...createForm,
+        phone: createForm.phone || undefined,
+      });
+      if (res.success) {
+        setShowCreate(false);
+        setCreateForm(emptyForm);
+        load();
+      } else {
+        setCreateError(res.message ?? 'Oluşturma başarısız.');
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setCreateError(axiosErr.response?.data?.message ?? 'Bir hata oluştu.');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Müşteriler</h1>
-        <span className="text-sm text-gray-500">{totalCount} kayıt</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{totalCount} kayıt</span>
+          <button
+            onClick={() => { setShowCreate(true); setCreateError(''); setCreateForm(emptyForm); }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 transition"
+          >
+            <Plus size={16} />
+            Yeni Müşteri
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -110,13 +160,22 @@ export default function SiteAdminCustomersPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleToggle(c.id)}
-                        title={c.isActive ? 'Pasife Al' : 'Aktifleştir'}
-                        className="text-gray-400 hover:text-violet-600 transition"
-                      >
-                        {c.isActive ? <ToggleRight size={22} className="text-green-500" /> : <ToggleLeft size={22} />}
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => navigate(`/site-admin/customers/${c.id}`)}
+                          title="Detay"
+                          className="p-1 text-gray-400 hover:text-violet-600 transition"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleToggle(c.id); }}
+                          title={c.isActive ? 'Pasife Al' : 'Aktifleştir'}
+                          className="p-1 text-gray-400 hover:text-violet-600 transition"
+                        >
+                          {c.isActive ? <ToggleRight size={20} className="text-green-500" /> : <ToggleLeft size={20} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -146,6 +205,124 @@ export default function SiteAdminCustomersPage() {
           >
             <ChevronRight size={16} />
           </button>
+        </div>
+      )}
+
+      {/* Create Customer Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Yeni Müşteri Oluştur</h2>
+              <button type="button" onClick={() => setShowCreate(false)} title="Kapat" className="p-1 text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            {createError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {createError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateSubmit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="create-firstName" className="block text-sm font-medium text-gray-700 mb-1">Ad</label>
+                  <input
+                    id="create-firstName"
+                    type="text"
+                    value={createForm.firstName}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, firstName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none"
+                    placeholder="Ad"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="create-lastName" className="block text-sm font-medium text-gray-700 mb-1">Soyad</label>
+                  <input
+                    id="create-lastName"
+                    type="text"
+                    value={createForm.lastName}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, lastName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none"
+                    placeholder="Soyad"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="create-businessName" className="block text-sm font-medium text-gray-700 mb-1">İşletme Adı</label>
+                <input
+                  id="create-businessName"
+                  type="text"
+                  value={createForm.businessName}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, businessName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none"
+                  placeholder="Mağaza veya işletme adı"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="create-email" className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                <input
+                  id="create-email"
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none"
+                  placeholder="ornek@email.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="create-phone" className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                <input
+                  id="create-phone"
+                  type="tel"
+                  value={createForm.phone}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none"
+                  placeholder="Opsiyonel"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="create-password" className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+                <input
+                  id="create-password"
+                  type="text"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none"
+                  placeholder="En az 8 karakter, büyük harf, küçük harf, rakam"
+                  required
+                  minLength={8}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="flex-1 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition disabled:opacity-50"
+                >
+                  {createLoading ? 'Oluşturuluyor...' : 'Oluştur'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -142,3 +142,67 @@ public class RecentSaleDto
     public int ItemCount { get; set; }
     public string ItemsSummary { get; set; } = string.Empty;
 }
+
+// ── Kapsamlı Günlük Rapor (Gün Sonu / Z Raporu) ──
+
+public class DailyClosingReportDto
+{
+    public DateTime Date { get; set; }
+
+    // Genel Özet
+    public decimal GrandTotal { get; set; }
+    public decimal SubTotal { get; set; }
+    public decimal TaxTotal { get; set; }
+    public decimal DiscountTotal { get; set; }
+    public int SaleCount { get; set; }
+    public int TotalItemsSold { get; set; }
+    public decimal AverageBasket { get; set; }
+
+    // Ödeme Türü Kırılımı
+    public decimal CashTotal { get; set; }
+    public int CashCount { get; set; }
+    public decimal CardTotal { get; set; }
+    public int CardCount { get; set; }
+    public decimal CreditTotal { get; set; }
+    public int CreditCount { get; set; }
+
+    // İptal / İade
+    public int CancelCount { get; set; }
+    public decimal CancelTotal { get; set; }
+    public int ReturnCount { get; set; }
+    public decimal ReturnTotal { get; set; }
+
+    // Kâr Bilgisi
+    public decimal TotalCost { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal GrossProfitMargin { get; set; }
+
+    // Saatlik Dağılım
+    public List<HourlySalesDto> HourlyBreakdown { get; set; } = [];
+
+    // Kasiyer Bazlı Kırılım
+    public List<CashierSalesDto> CashierBreakdown { get; set; } = [];
+
+    // Günün En Çok Satan Ürünleri
+    public List<TopProductDto> TopProducts { get; set; } = [];
+}
+
+public class HourlySalesDto
+{
+    public int Hour { get; set; }
+    public string HourLabel { get; set; } = string.Empty;
+    public int SaleCount { get; set; }
+    public decimal Total { get; set; }
+    public int ItemCount { get; set; }
+}
+
+public class CashierSalesDto
+{
+    public int UserId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public int SaleCount { get; set; }
+    public decimal Total { get; set; }
+    public decimal CashTotal { get; set; }
+    public decimal CardTotal { get; set; }
+    public decimal CreditTotal { get; set; }
+}

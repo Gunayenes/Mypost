@@ -58,6 +58,9 @@ public static class DependencyInjection
         // Backup servisi
         services.AddScoped<IBackupService, BackupService>();
 
+        // Servis yönetim modülü
+        services.AddScoped<IServiceRecordService, ServiceRecordService>();
+
         // Web auth servisi
         services.AddScoped<IWebAuthService, WebAuthService>();
 

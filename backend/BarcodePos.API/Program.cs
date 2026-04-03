@@ -2,10 +2,12 @@ using BarcodePos.API.Middleware;
 using BarcodePos.Application;
 using BarcodePos.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using System.Threading.RateLimiting;
 
 // ── Serilog erken başlatma (uygulama başlamadan önce loglama aktif) ──
 Log.Logger = new LoggerConfiguration()
@@ -15,6 +17,23 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("KasaPlus API başlatılıyor...");
+
+    // ── .env dosyasından ortam değişkenlerini yükle ──
+    var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+    if (File.Exists(envPath))
+    {
+        foreach (var line in File.ReadAllLines(envPath))
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#')) continue;
+            var idx = trimmed.IndexOf('=');
+            if (idx <= 0) continue;
+            var key = trimmed[..idx].Trim();
+            var val = trimmed[(idx + 1)..].Trim();
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                Environment.SetEnvironmentVariable(key, val);
+        }
+    }
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -55,16 +74,19 @@ try
             else
             {
                 // Geliştirme ortamı varsayılanları
-                policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4173");
+                policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://localhost:4173");
             }
-            policy.AllowAnyHeader()
-                  .AllowAnyMethod()
+            policy.WithHeaders("Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With")
+                  .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                   .AllowCredentials();
         });
     });
 
     // ── Authentication & Authorization — JWT Bearer ──
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET")
+                    ?? jwtSettings["Secret"]
+                    ?? throw new InvalidOperationException("JWT Secret yapılandırılmamış. JWT_SECRET env var veya JwtSettings:Secret ayarlayın.");
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,16 +100,45 @@ try
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings["Secret"]!))
+                Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
     builder.Services.AddAuthorization();
 
     // ── Health Check ──
     builder.Services.AddHealthChecks();
+
+    // ── Rate Limiting ──
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Login endpoint'leri: IP başına 5 istek / 15 dakika
+        options.AddPolicy("login", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(15),
+                    QueueLimit = 0
+                }));
+
+        // Public endpoint'ler (servis takip vb.): IP başına 20 istek / dakika
+        options.AddPolicy("public", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 20,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+    });
 
     // ── Cloud PORT desteği (Render/Railway) ──
     // ConfigureKestrel en yüksek öncelik — appsettings Kestrel config'ini ezer
@@ -144,6 +195,22 @@ try
         app.UseHttpsRedirection();
     }
     app.UseCors("AllowFrontend");
+    app.UseRateLimiter();
+
+    // ── Güvenlik Header'ları ──
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+        if (!app.Environment.IsDevelopment())
+        {
+            context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        }
+        await next();
+    });
 
     // ── Lisans kontrolü — her API isteğinde lisansı doğrular ──
     app.UseMiddleware<LicenseCheckMiddleware>();

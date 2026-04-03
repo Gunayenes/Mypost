@@ -25,6 +25,9 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
 
         RuleFor(x => x.NewPassword)
             .NotEmpty().WithMessage("Yeni şifre zorunludur.")
-            .MinimumLength(6).WithMessage("Şifre en az 6 karakter olmalıdır.");
+            .MinimumLength(8).WithMessage("Şifre en az 8 karakter olmalıdır.")
+            .Matches(@"[A-Z]").WithMessage("Şifre en az bir büyük harf içermelidir.")
+            .Matches(@"[a-z]").WithMessage("Şifre en az bir küçük harf içermelidir.")
+            .Matches(@"\d").WithMessage("Şifre en az bir rakam içermelidir.");
     }
 }

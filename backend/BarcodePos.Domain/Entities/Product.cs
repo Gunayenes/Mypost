@@ -15,6 +15,9 @@ public class Product : AuditableEntity
     public string? Description { get; set; }
     public decimal CostPrice { get; set; }
     public decimal SalePrice { get; set; }
+    public decimal? CostPriceUsd { get; set; }
+    public decimal? SalePriceUsd { get; set; }
+    public decimal? ExchangeRate { get; set; }
     public decimal TaxRate { get; set; }
     public int StockQuantity { get; set; }
     public int MinStockLevel { get; set; }

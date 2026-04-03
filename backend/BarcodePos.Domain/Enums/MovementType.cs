@@ -11,5 +11,6 @@ public enum MovementType
     Cikis = 2,
     Satis = 3,
     Iade = 4,
-    Duzeltme = 5
+    Duzeltme = 5,
+    Servis = 6
 }

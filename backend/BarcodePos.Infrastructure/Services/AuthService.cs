@@ -27,9 +27,10 @@ public class AuthService : IAuthService
 
     public async Task<Result<LoginResponse>> LoginAsync(LoginRequest request)
     {
+        var usernameLower = request.Username.Trim().ToLowerInvariant();
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Username == request.Username);
+            .FirstOrDefaultAsync(u => u.Username.ToLower() == usernameLower);
 
         if (user is null)
             return Result<LoginResponse>.Fail("Kullanıcı adı veya şifre hatalı.");
@@ -38,7 +39,7 @@ public class AuthService : IAuthService
             return Result<LoginResponse>.Fail("Kullanıcı adı veya şifre hatalı.");
 
         if (!user.IsActive)
-            return Result<LoginResponse>.Fail("Hesabınız devre dışı bırakılmıştır.");
+            return Result<LoginResponse>.Fail("Hesabınız devre dışı bırakılmıştır. Lütfen yöneticinize başvurun.");
 
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var expirationMinutes = int.Parse(jwtSettings["ExpirationInMinutes"]!);
@@ -53,7 +54,8 @@ public class AuthService : IAuthService
             new("StoreId", user.StoreId.ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Secret"]!;
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(

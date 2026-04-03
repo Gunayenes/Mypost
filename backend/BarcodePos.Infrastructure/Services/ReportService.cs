@@ -41,6 +41,109 @@ public class ReportService : IReportService
         });
     }
 
+    public async Task<Result<DailyClosingReportDto>> GetDailyClosingReportAsync(DateTime date, int storeId)
+    {
+        var dayStart = date.Date;
+        var dayEnd = dayStart.AddDays(1);
+
+        // Tüm satışları yükle (items + user dahil)
+        var allSales = await _context.Sales
+            .AsNoTracking()
+            .Include(s => s.User)
+            .Include(s => s.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Category)
+            .Where(s => s.StoreId == storeId && s.SaleDate >= dayStart && s.SaleDate < dayEnd)
+            .ToListAsync();
+
+        var completed = allSales.Where(s => s.Status == SaleStatus.Tamamlandi).ToList();
+        var cancelled = allSales.Where(s => s.Status == SaleStatus.Iptal).ToList();
+        var returned = allSales.Where(s => s.Status == SaleStatus.Iade).ToList();
+
+        var cashSales = completed.Where(s => s.PaymentType == PaymentType.Nakit).ToList();
+        var cardSales = completed.Where(s => s.PaymentType == PaymentType.Kart).ToList();
+        var creditSales = completed.Where(s => s.PaymentType == PaymentType.Veresiye).ToList();
+
+        var completedItems = completed.SelectMany(s => s.Items).ToList();
+        var totalItemsSold = completedItems.Sum(i => i.Quantity);
+        var grandTotal = completed.Sum(s => s.GrandTotal);
+        var totalCost = completedItems.Sum(i => i.CostPrice * i.Quantity);
+        var grossProfit = grandTotal - totalCost;
+
+        // Saatlik dağılım (0-23 arası)
+        var hourlyBreakdown = Enumerable.Range(0, 24).Select(h =>
+        {
+            var hourSales = completed.Where(s => s.SaleDate.Hour == h).ToList();
+            return new HourlySalesDto
+            {
+                Hour = h,
+                HourLabel = $"{h:D2}:00",
+                SaleCount = hourSales.Count,
+                Total = hourSales.Sum(s => s.GrandTotal),
+                ItemCount = hourSales.SelectMany(s => s.Items).Sum(i => i.Quantity)
+            };
+        }).ToList();
+
+        // Kasiyer bazlı kırılım
+        var cashierBreakdown = completed
+            .GroupBy(s => new { s.UserId, s.User.FullName })
+            .Select(g => new CashierSalesDto
+            {
+                UserId = g.Key.UserId,
+                FullName = g.Key.FullName,
+                SaleCount = g.Count(),
+                Total = g.Sum(s => s.GrandTotal),
+                CashTotal = g.Where(s => s.PaymentType == PaymentType.Nakit).Sum(s => s.GrandTotal),
+                CardTotal = g.Where(s => s.PaymentType == PaymentType.Kart).Sum(s => s.GrandTotal),
+                CreditTotal = g.Where(s => s.PaymentType == PaymentType.Veresiye).Sum(s => s.GrandTotal)
+            })
+            .OrderByDescending(c => c.Total)
+            .ToList();
+
+        // Günün en çok satanları (top 10)
+        var topProducts = completedItems
+            .GroupBy(i => new { i.ProductId, i.Barcode, i.ProductName, CategoryName = i.Product.Category.Name })
+            .Select(g => new TopProductDto
+            {
+                ProductId = g.Key.ProductId,
+                Barcode = g.Key.Barcode,
+                ProductName = g.Key.ProductName,
+                CategoryName = g.Key.CategoryName,
+                TotalQuantity = g.Sum(i => i.Quantity),
+                TotalRevenue = g.Sum(i => i.LineTotal),
+                TotalProfit = g.Sum(i => (i.UnitPrice - i.CostPrice) * i.Quantity - i.DiscountAmount)
+            })
+            .OrderByDescending(p => p.TotalQuantity)
+            .Take(10)
+            .ToList();
+
+        return Result<DailyClosingReportDto>.Ok(new DailyClosingReportDto
+        {
+            Date = dayStart,
+            GrandTotal = grandTotal,
+            SubTotal = completed.Sum(s => s.SubTotal),
+            TaxTotal = completed.Sum(s => s.TaxTotal),
+            DiscountTotal = completed.Sum(s => s.DiscountTotal),
+            SaleCount = completed.Count,
+            TotalItemsSold = totalItemsSold,
+            AverageBasket = completed.Count > 0 ? Math.Round(grandTotal / completed.Count, 2) : 0,
+            CashTotal = cashSales.Sum(s => s.GrandTotal),
+            CashCount = cashSales.Count,
+            CardTotal = cardSales.Sum(s => s.GrandTotal),
+            CardCount = cardSales.Count,
+            CreditTotal = creditSales.Sum(s => s.GrandTotal),
+            CreditCount = creditSales.Count,
+            CancelCount = cancelled.Count,
+            CancelTotal = cancelled.Sum(s => s.GrandTotal),
+            ReturnCount = returned.Count,
+            ReturnTotal = returned.Sum(s => s.GrandTotal),
+            TotalCost = totalCost,
+            GrossProfit = grossProfit,
+            GrossProfitMargin = grandTotal > 0 ? Math.Round(grossProfit / grandTotal * 100, 2) : 0,
+            HourlyBreakdown = hourlyBreakdown,
+            CashierBreakdown = cashierBreakdown,
+            TopProducts = topProducts
+        });
+    }
+
     public async Task<Result<PeriodSalesReportDto>> GetPeriodReportAsync(DateTime from, DateTime to, int storeId)
     {
         var dateFrom = from.Date;

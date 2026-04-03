@@ -98,11 +98,12 @@ export default function LicenseGate({ children }: LicenseGateProps) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
         {/* Header */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 bg-amber-500 rounded-xl flex items-center justify-center mb-3">
-            <Shield className="text-white" size={28} />
-          </div>
+          <img src="/Logom.jpg" alt="KasaPlus" className="w-16 h-16 rounded-xl object-cover mb-3" />
           <h1 className="text-2xl font-bold text-gray-900">KasaPlus</h1>
-          <p className="text-sm text-gray-500 mt-1">Lisans Aktivasyonu</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <Shield size={14} className="text-amber-500" />
+            <p className="text-sm text-gray-500">Lisans Aktivasyonu</p>
+          </div>
         </div>
 
         {/* Makine ID */}

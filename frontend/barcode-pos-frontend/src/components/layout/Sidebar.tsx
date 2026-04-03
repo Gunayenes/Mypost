@@ -11,6 +11,8 @@ import {
   Database,
   ChevronLeft,
   ChevronRight,
+  Wrench,
+  Search,
 } from 'lucide-react';
 import { useState } from 'react';
 import { isElectron } from '@/utils/platform';
@@ -23,6 +25,8 @@ const navItems = [
   { path: 'customers', icon: Users, label: 'Müşteriler' },
   { path: 'sales', icon: ShoppingCart, label: 'Satışlar' },
   { path: 'stock', icon: ArrowLeftRight, label: 'Stok Hareketleri' },
+  { path: 'services', icon: Wrench, label: 'Servis Yönetimi' },
+  { path: 'servis-takip', icon: Search, label: 'Servis Takip' },
   { path: 'reports', icon: BarChart3, label: 'Raporlar' },
   { path: 'backup', icon: Database, label: 'Yedekleme' },
 ];
@@ -40,9 +44,12 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
-        {!collapsed && (
-          <span className="text-lg font-bold tracking-tight">KasaPlus</span>
-        )}
+        <div className="flex items-center gap-2 overflow-hidden">
+          <img src="/Logom.jpg" alt="KasaPlus" className="w-8 h-8 rounded-md object-cover shrink-0" />
+          {!collapsed && (
+            <span className="text-lg font-bold tracking-tight">KasaPlus</span>
+          )}
+        </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-1 rounded hover:bg-white/10"
