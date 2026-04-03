@@ -22,5 +22,20 @@ public class WebCustomerConfiguration : IEntityTypeConfiguration<WebCustomer>
             .WithMany()
             .HasForeignKey(e => e.StoreId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Seed: varsayılan admin kullanıcıyı WebCustomer olarak bağla
+        builder.HasData(new WebCustomer
+        {
+            Id = 1,
+            Email = "admin",
+            PasswordHash = "$2a$11$GBrDulOzslTYDkE9UmrYg.eyFLfqWXNkYE4g9Qn7HMxnFyDy198AK", // Admin123!
+            FirstName = "Sistem",
+            LastName = "Yöneticisi",
+            BusinessName = "Ana Mağaza",
+            EmailConfirmed = true,
+            IsActive = true,
+            StoreId = 1,
+            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        });
     }
 }
