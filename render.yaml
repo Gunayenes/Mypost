@@ -12,7 +12,7 @@ services:
       - key: DISABLE_LICENSE_CHECK
         value: "true"
       - key: ConnectionStrings__DefaultConnection
-        value: "Data Source=/app/data/BarcodePos.db"
+        sync: false
       - key: ConnectionStrings__LicenseConnection
         value: "Data Source=/app/data/licenses.db"
       - key: JwtSettings__Secret

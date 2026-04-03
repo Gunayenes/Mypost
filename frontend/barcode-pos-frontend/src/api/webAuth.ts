@@ -10,4 +10,10 @@ export const webAuthApi = {
 
   resetPassword: (token: string, newPassword: string) =>
     api.post<ApiResult<void>>('/web/reset-password', { token, newPassword }),
+
+  confirmEmail: (token: string) =>
+    api.get<ApiResult<void>>('/web/confirm-email', { params: { token } }),
+
+  resendConfirmation: (email: string) =>
+    api.post<ApiResult<void>>('/web/resend-confirmation', { email }),
 };

@@ -27,7 +27,7 @@ RUN dotnet publish BarcodePos.API/BarcodePos.API.csproj -c Release -o /app/publi
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# SQLite için gerekli native lib
+# SQLite (lisans DB) için gerekli native lib
 RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-0 && rm -rf /var/lib/apt/lists/*
 
 # Backend publish çıktısı
@@ -41,7 +41,6 @@ RUN mkdir -p /app/data
 
 # Ortam değişkenleri
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/BarcodePos.db"
 ENV ConnectionStrings__LicenseConnection="Data Source=/app/data/licenses.db"
 ENV DISABLE_LICENSE_CHECK=true
 

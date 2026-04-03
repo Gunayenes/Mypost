@@ -10,4 +10,6 @@ public interface IWebAuthService
     Task<Result> ForgotPasswordAsync(ForgotPasswordRequest request);
     Task<Result> ResetPasswordAsync(ResetPasswordRequest request);
     Task<Result<WebProfileResponse>> GetProfileAsync(int customerId);
+    Task<Result> ConfirmEmailAsync(string token);
+    Task<Result> ResendConfirmationAsync(string email);
 }

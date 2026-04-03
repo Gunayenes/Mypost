@@ -1,3 +1,4 @@
+using BarcodePos.API.Extensions;
 using BarcodePos.Application.DTOs.Users;
 using BarcodePos.Application.Interfaces;
 using BarcodePos.Domain.Interfaces;
@@ -61,6 +62,15 @@ public class UsersController : ControllerBase
                 message = "Doğrulama hatası.",
                 errors = validation.Errors.Select(e => e.ErrorMessage).ToList()
             });
+
+        // Plan limit kontrolü
+        var plan = HttpContext.GetSubscriptionPlan();
+        if (plan is not null)
+        {
+            var users = await _userService.GetAllAsync(_currentUser.StoreId);
+            if (users.Success && users.Data!.Count >= plan.MaxUsers)
+                return BadRequest(new { success = false, message = $"Mevcut planınızda en fazla {plan.MaxUsers} kullanıcı ekleyebilirsiniz. Lütfen paketinizi yükseltin." });
+        }
 
         var result = await _userService.CreateAsync(request, _currentUser.StoreId);
 

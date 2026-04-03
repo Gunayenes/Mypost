@@ -25,7 +25,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor — 401 ise login'e, 403 lisans ise sayfayı yenile
+// Response interceptor — 401 ise login'e, 403 lisans/abonelik ise uyar
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -34,6 +34,14 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Lisans geçersiz. Lütfen geliştiriciyle iletişime geçin.' } }));
       window.location.href = '/';
+      return Promise.reject(error);
+    }
+    if (error.response?.status === 403 && error.response?.data?.subscriptionExpired) {
+      window.dispatchEvent(new CustomEvent('subscription-expired'));
+      return Promise.reject(error);
+    }
+    if (error.response?.status === 403 && error.response?.data?.featureRestricted) {
+      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'warning', message: error.response.data.message || 'Bu özellik mevcut planınızda kullanılamaz.' } }));
       return Promise.reject(error);
     }
     if (error.response?.status === 401) {

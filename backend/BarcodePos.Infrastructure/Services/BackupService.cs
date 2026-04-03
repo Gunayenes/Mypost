@@ -17,6 +17,7 @@ public partial class BackupService : IBackupService
     private readonly ILogger<BackupService> _logger;
     private readonly string _dbPath;
     private readonly string _backupDir;
+    private readonly bool _isSqlite;
 
     // Dosya adı güvenlik kontrolü — sadece güvenli karakterler
     [GeneratedRegex(@"^[a-zA-Z0-9_\-\.]+$")]
@@ -31,18 +32,31 @@ public partial class BackupService : IBackupService
         _configuration = configuration;
         _logger = logger;
 
-        // Connection string'den DB dosya yolunu çıkar
         var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "Data Source=BarcodePos.db";
-        var builder = new SqliteConnectionStringBuilder(connectionString);
-        _dbPath = Path.GetFullPath(builder.DataSource);
+        _isSqlite = !connectionString.Contains("Host=") && !connectionString.Contains("Server=");
 
-        // Yedek klasörü — DB dosyasının yanında backups/
-        _backupDir = Path.Combine(Path.GetDirectoryName(_dbPath)!, "backups");
-        Directory.CreateDirectory(_backupDir);
+        if (_isSqlite)
+        {
+            // SQLite: Connection string'den DB dosya yolunu çıkar
+            var builder = new SqliteConnectionStringBuilder(connectionString);
+            _dbPath = Path.GetFullPath(builder.DataSource);
+            _backupDir = Path.Combine(Path.GetDirectoryName(_dbPath)!, "backups");
+            Directory.CreateDirectory(_backupDir);
+        }
+        else
+        {
+            // PostgreSQL: Yedekleme dosya tabanlı değil
+            _dbPath = string.Empty;
+            _backupDir = Path.Combine(AppContext.BaseDirectory, "backups");
+            Directory.CreateDirectory(_backupDir);
+        }
     }
 
     public async Task<Result<BackupResultDto>> CreateBackupAsync()
     {
+        if (!_isSqlite)
+            return Result<BackupResultDto>.Fail("PostgreSQL ortamında dosya tabanlı yedekleme desteklenmez. Veritabanı sağlayıcınızın yedekleme araçlarını kullanın.");
+
         try
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
@@ -102,6 +116,9 @@ public partial class BackupService : IBackupService
 
     public async Task<Result<RestoreResultDto>> RestoreFromFileAsync(Stream fileStream)
     {
+        if (!_isSqlite)
+            return Result<RestoreResultDto>.Fail("PostgreSQL ortamında dosya tabanlı geri yükleme desteklenmez.");
+
         try
         {
             // Yüklenen dosyayı geçici konuma kaydet
@@ -138,6 +155,9 @@ public partial class BackupService : IBackupService
 
     public async Task<Result<RestoreResultDto>> RestoreFromExistingAsync(string fileName)
     {
+        if (!_isSqlite)
+            return Result<RestoreResultDto>.Fail("PostgreSQL ortamında dosya tabanlı geri yükleme desteklenmez.");
+
         try
         {
             if (!IsValidFileName(fileName))

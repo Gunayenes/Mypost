@@ -99,6 +99,8 @@ public class CustomersController : ControllerBase
     [HttpGet("{id:int}/transactions")]
     public async Task<IActionResult> GetTransactions(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var result = await _customerService.GetTransactionsAsync(id, _currentUser.StoreId, page, pageSize);
         if (!result.Success)
             return NotFound(new { success = false, message = result.Message });

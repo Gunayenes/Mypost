@@ -14,6 +14,7 @@ public class StoreConfiguration : IEntityTypeConfiguration<Store>
         builder.Property(s => s.Name).IsRequired().HasMaxLength(200);
         builder.Property(s => s.Address).HasMaxLength(500);
         builder.Property(s => s.Phone).HasMaxLength(20);
+        builder.Property(s => s.LogoPath).HasMaxLength(500);
 
         // Seed: varsayılan mağaza
         builder.HasData(new Store

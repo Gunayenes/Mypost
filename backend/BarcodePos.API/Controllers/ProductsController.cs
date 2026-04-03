@@ -1,3 +1,4 @@
+using BarcodePos.API.Extensions;
 using BarcodePos.Application.DTOs.Products;
 using BarcodePos.Application.Interfaces;
 using BarcodePos.Domain.Interfaces;
@@ -103,6 +104,15 @@ public class ProductsController : ControllerBase
         var validation = await validator.ValidateAsync(request);
         if (!validation.IsValid)
             return BadRequest(new { success = false, message = "Doğrulama hatası.", errors = validation.Errors.Select(e => e.ErrorMessage) });
+
+        // Plan limit kontrolü
+        var plan = HttpContext.GetSubscriptionPlan();
+        if (plan is not null)
+        {
+            var currentCount = await _productService.GetAllAsync(new ProductListFilter(), _currentUser.StoreId);
+            if (currentCount.Success && currentCount.Data!.TotalCount >= plan.MaxProducts)
+                return BadRequest(new { success = false, message = $"Mevcut planınızda en fazla {plan.MaxProducts} ürün ekleyebilirsiniz. Lütfen paketinizi yükseltin." });
+        }
 
         var result = await _productService.CreateAsync(request, _currentUser.StoreId);
         if (!result.Success)

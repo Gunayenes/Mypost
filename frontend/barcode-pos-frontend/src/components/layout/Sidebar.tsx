@@ -13,9 +13,11 @@ import {
   ChevronRight,
   Wrench,
   Search,
+  Settings,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isElectron } from '@/utils/platform';
+import { useStoreSettings } from '@/store/storeSettingsStore';
 
 const navItems = [
   { path: '', icon: LayoutDashboard, label: 'Dashboard' },
@@ -29,12 +31,17 @@ const navItems = [
   { path: 'servis-takip', icon: Search, label: 'Servis Takip' },
   { path: 'reports', icon: BarChart3, label: 'Raporlar' },
   { path: 'backup', icon: Database, label: 'Yedekleme' },
+  { path: 'store-settings', icon: Settings, label: 'Mağaza Ayarları' },
 ];
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const prefix = isElectron() ? '' : '/app';
   const location = useLocation();
+  const { settings, fetch: fetchSettings } = useStoreSettings();
+
+  // İlk yüklemede store settings'i çek
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   return (
     <aside
@@ -45,9 +52,15 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
         <div className="flex items-center gap-2 overflow-hidden">
-          <img src="/Logom.jpg" alt="KasaPlus" className="w-8 h-8 rounded-md object-cover shrink-0" />
+          <img
+            src={settings?.logoPath ? `${import.meta.env.VITE_API_BASE_URL || ''}${settings.logoPath}` : '/Logom.jpg'}
+            alt={settings?.name || 'KasaPlus'}
+            className="w-8 h-8 rounded-md object-cover shrink-0"
+          />
           {!collapsed && (
-            <span className="text-lg font-bold tracking-tight">KasaPlus</span>
+            <span className="text-lg font-bold tracking-tight truncate">
+              {settings?.name || 'KasaPlus'}
+            </span>
           )}
         </div>
         <button
@@ -69,6 +82,7 @@ export default function Sidebar() {
             <NavLink
               key={to}
               to={to}
+              data-tour={path || 'dashboard'}
               className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-colors ${
                 isActive
                   ? 'bg-primary text-white'

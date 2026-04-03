@@ -39,8 +39,8 @@ public class GlobalExceptionMiddleware
         {
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Yetkisiz erişim."),
             KeyNotFoundException => (HttpStatusCode.NotFound, "Kayıt bulunamadı."),
-            ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
-            InvalidOperationException => (HttpStatusCode.Conflict, exception.Message),
+            ArgumentException => (HttpStatusCode.BadRequest, "Geçersiz istek."),
+            InvalidOperationException => (HttpStatusCode.Conflict, "İşlem tamamlanamadı."),
             _ => (HttpStatusCode.InternalServerError, "Sunucu hatası oluştu.")
         };
 

@@ -6,6 +6,7 @@ import { useSiteAdminAuthStore } from '@/store/siteAdminAuthStore';
 import AppLayout from '@/components/layout/AppLayout';
 import ToastContainer from '@/components/ui/ToastContainer';
 import LicenseGate from '@/components/LicenseGate';
+import SubscriptionGate from '@/components/SubscriptionGate';
 import { isElectron } from '@/utils/platform';
 
 // ── POS App sayfaları ──
@@ -23,6 +24,7 @@ const BackupPage = lazy(() => import('@/pages/BackupPage'));
 const UsersPage = lazy(() => import('@/pages/UsersPage'));
 const ServicesPage = lazy(() => import('@/pages/ServicesPage'));
 const ServiceDetailPage = lazy(() => import('@/pages/services/ServiceDetailPage'));
+const StoreSettingsPage = lazy(() => import('@/pages/StoreSettingsPage'));
 
 // ── Tanıtım sayfaları ──
 const PublicLayout = lazy(() => import('@/components/public/PublicLayout'));
@@ -35,6 +37,7 @@ const RegisterPage = lazy(() => import('@/pages/public/RegisterPage'));
 const ServiceTrackingPage = lazy(() => import('@/pages/public/ServiceTrackingPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
+const EmailConfirmPage = lazy(() => import('@/pages/EmailConfirmPage'));
 
 // ── Site Admin sayfaları ──
 const SiteAdminLayout = lazy(() => import('@/components/siteAdmin/SiteAdminLayout'));
@@ -99,6 +102,7 @@ export default function App() {
         <Route path="services" element={<ServicesPage />} />
         <Route path="services/:id" element={<ServiceDetailPage />} />
         <Route path="servis-takip" element={<ServiceTrackingPage embedded />} />
+        <Route path="store-settings" element={<AdminRoute><StoreSettingsPage /></AdminRoute>} />
       </Route>
       <Route path="/servis-takip" element={<ServiceTrackingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -120,6 +124,7 @@ export default function App() {
       <Route path="/kayit" element={<RegisterPage />} />
       <Route path="/sifremi-unuttum" element={<ForgotPasswordPage />} />
       <Route path="/sifre-sifirla" element={<ResetPasswordPage />} />
+      <Route path="/email-dogrula" element={<EmailConfirmPage />} />
 
       {/* POS login + uygulama */}
       <Route path="/login" element={<LoginPage />} />
@@ -139,6 +144,7 @@ export default function App() {
         <Route path="services" element={<ServicesPage />} />
         <Route path="services/:id" element={<ServiceDetailPage />} />
         <Route path="servis-takip" element={<ServiceTrackingPage embedded />} />
+        <Route path="store-settings" element={<AdminRoute><StoreSettingsPage /></AdminRoute>} />
       </Route>
 
       {/* Servis Takip (müşteri dış erişim) */}
@@ -163,7 +169,9 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<Spinner />}>
         <ToastContainer />
-        {electron ? posRoutes : webRoutes}
+        <SubscriptionGate>
+          {electron ? posRoutes : webRoutes}
+        </SubscriptionGate>
       </Suspense>
     </BrowserRouter>
   );

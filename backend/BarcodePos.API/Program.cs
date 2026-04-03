@@ -138,6 +138,17 @@ try
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0
                 }));
+
+        // Upload endpoint'leri: IP başına 10 istek / dakika
+        options.AddPolicy("upload", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
     });
 
     // ── Cloud PORT desteği (Render/Railway) ──
@@ -215,15 +226,18 @@ try
     // ── Lisans kontrolü — her API isteğinde lisansı doğrular ──
     app.UseMiddleware<LicenseCheckMiddleware>();
 
-    // ── Production'da frontend static dosyalarını serve et ──
+    // ── Static dosyalar (uploads her zaman, frontend sadece production) ──
+    app.UseStaticFiles(); // uploads/logos vb. her ortamda erişilebilir
     if (!app.Environment.IsDevelopment())
     {
         app.UseDefaultFiles();
-        app.UseStaticFiles();
     }
 
     app.UseAuthentication();
     app.UseAuthorization();
+
+    // ── Abonelik kontrolü — aktif abonelik yoksa POS API'yi kısıtlar ──
+    app.UseMiddleware<SubscriptionCheckMiddleware>();
 
     app.MapControllers();
     app.MapHealthChecks("/health");

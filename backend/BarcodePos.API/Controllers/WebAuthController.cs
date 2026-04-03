@@ -136,4 +136,34 @@ public class WebAuthController : ControllerBase
 
         return Ok(result);
     }
+
+    /// <summary>
+    /// E-posta doğrulama — token ile e-posta adresini onaylar.
+    /// </summary>
+    [HttpGet("confirm-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return BadRequest(new { success = false, message = "Token zorunlu." });
+
+        var result = await _webAuthService.ConfirmEmailAsync(token);
+
+        if (!result.Success)
+            return BadRequest(new { success = false, message = result.Message });
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Doğrulama e-postasını tekrar gönderir.
+    /// </summary>
+    [HttpPost("resend-confirmation")]
+    [AllowAnonymous]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> ResendConfirmation([FromBody] ForgotPasswordRequest request)
+    {
+        var result = await _webAuthService.ResendConfirmationAsync(request.Email);
+        return Ok(result);
+    }
 }

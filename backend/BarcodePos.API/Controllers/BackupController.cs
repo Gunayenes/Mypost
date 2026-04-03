@@ -1,6 +1,8 @@
+using BarcodePos.API.Extensions;
 using BarcodePos.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BarcodePos.API.Controllers;
 
@@ -16,12 +18,21 @@ public class BackupController : ControllerBase
         _backupService = backupService;
     }
 
+    private IActionResult? CheckBackupAccess()
+    {
+        var plan = HttpContext.GetSubscriptionPlan();
+        if (plan is not null && !plan.HasBackup)
+            return StatusCode(403, new { success = false, message = "Yedekleme mevcut planınızda kullanılamaz. Lütfen paketinizi yükseltin.", featureRestricted = true });
+        return null;
+    }
+
     /// <summary>
     /// Yeni yedek oluşturur.
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateBackup()
     {
+        var check = CheckBackupAccess(); if (check is not null) return check;
         var result = await _backupService.CreateBackupAsync();
         return result.Success ? Ok(result) : BadRequest(result);
     }
@@ -55,6 +66,7 @@ public class BackupController : ControllerBase
     /// </summary>
     [HttpPost("restore")]
     [RequestSizeLimit(500 * 1024 * 1024)] // 500 MB
+    [EnableRateLimiting("upload")]
     public async Task<IActionResult> RestoreFromUpload(IFormFile file)
     {
         if (file == null || file.Length == 0)

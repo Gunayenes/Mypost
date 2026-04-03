@@ -10,7 +10,6 @@ namespace BarcodePos.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[AllowAnonymous]
 public class LicenseController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -24,6 +23,7 @@ public class LicenseController : ControllerBase
     /// Lisans durumunu kontrol eder. Login sayfasından önce çağrılır.
     /// </summary>
     [HttpGet("status")]
+    [AllowAnonymous]
     public IActionResult GetStatus()
     {
         var machineId = LicenseService.GetMachineId();
@@ -45,6 +45,7 @@ public class LicenseController : ControllerBase
     /// Lisans anahtarını aktive eder ve müşteriye özel kullanıcı oluşturur.
     /// </summary>
     [HttpPost("activate")]
+    [AllowAnonymous]
     public async Task<IActionResult> Activate([FromBody] ActivateLicenseRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.LicenseKey))
@@ -117,6 +118,7 @@ public class LicenseController : ControllerBase
     /// Sadece lokal erişimle veya yönetici tarafından çağrılabilir.
     /// </summary>
     [HttpDelete("revoke")]
+    [Authorize(Roles = "Admin,SiteAdmin")]
     public IActionResult Revoke()
     {
         var baseDir = AppContext.BaseDirectory;

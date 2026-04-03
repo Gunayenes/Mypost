@@ -16,10 +16,20 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // EF Core — SQLite
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite(connectionString));
+        // EF Core — PostgreSQL (cloud) veya SQLite (local/Electron)
+        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? "";
+        if (connectionString.Contains("Host=") || connectionString.Contains("Server="))
+        {
+            // PostgreSQL
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(connectionString));
+        }
+        else
+        {
+            // SQLite (local/Electron)
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite(connectionString));
+        }
 
         // EF Core — License DB (LicenseManager ile paylaşılır)
         var licenseConnection = configuration.GetConnectionString("LicenseConnection") ?? "Data Source=licenses.db";
@@ -66,6 +76,9 @@ public static class DependencyInjection
 
         // Site admin servisi
         services.AddScoped<ISiteAdminService, SiteAdminService>();
+
+        // E-posta servisi
+        services.AddSingleton<IEmailService, EmailService>();
 
         return services;
     }

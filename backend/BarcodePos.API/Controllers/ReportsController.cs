@@ -1,3 +1,4 @@
+using BarcodePos.API.Extensions;
 using BarcodePos.Application.Interfaces;
 using BarcodePos.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -21,9 +22,18 @@ public class ReportsController : ControllerBase
         _currentUser = currentUser;
     }
 
+    private IActionResult? CheckReportAccess()
+    {
+        var plan = HttpContext.GetSubscriptionPlan();
+        if (plan is not null && !plan.HasReports)
+            return StatusCode(403, new { success = false, message = "Raporlar mevcut planınızda kullanılamaz. Lütfen paketinizi yükseltin.", featureRestricted = true });
+        return null;
+    }
+
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailyReport([FromQuery] DateTime? date)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var reportDate = date ?? DateTime.UtcNow.Date;
         var result = await _reportService.GetDailyReportAsync(reportDate, _currentUser.StoreId);
         return Ok(result);
@@ -32,6 +42,7 @@ public class ReportsController : ControllerBase
     [HttpGet("daily-closing")]
     public async Task<IActionResult> GetDailyClosingReport([FromQuery] DateTime? date)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var reportDate = date ?? DateTime.UtcNow.Date;
         var result = await _reportService.GetDailyClosingReportAsync(reportDate, _currentUser.StoreId);
         return Ok(result);
@@ -40,6 +51,7 @@ public class ReportsController : ControllerBase
     [HttpGet("period")]
     public async Task<IActionResult> GetPeriodReport([FromQuery] DateTime from, [FromQuery] DateTime to)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var result = await _reportService.GetPeriodReportAsync(from, to, _currentUser.StoreId);
         return Ok(result);
     }
@@ -47,6 +59,7 @@ public class ReportsController : ControllerBase
     [HttpGet("top-products")]
     public async Task<IActionResult> GetTopProducts([FromQuery] DateTime from, [FromQuery] DateTime to, [FromQuery] int limit = 10)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var result = await _reportService.GetTopProductsAsync(from, to, limit, _currentUser.StoreId);
         return Ok(result);
     }
@@ -54,6 +67,7 @@ public class ReportsController : ControllerBase
     [HttpGet("low-stock")]
     public async Task<IActionResult> GetLowStock()
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var result = await _reportService.GetLowStockReportAsync(_currentUser.StoreId);
         return Ok(result);
     }
@@ -62,6 +76,7 @@ public class ReportsController : ControllerBase
     [HttpGet("profit")]
     public async Task<IActionResult> GetProfitReport([FromQuery] DateTime from, [FromQuery] DateTime to)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var result = await _reportService.GetProfitReportAsync(from, to, _currentUser.StoreId);
         return Ok(result);
     }
@@ -69,6 +84,7 @@ public class ReportsController : ControllerBase
     [HttpGet("payment-summary")]
     public async Task<IActionResult> GetPaymentSummary([FromQuery] DateTime from, [FromQuery] DateTime to)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var result = await _reportService.GetPaymentSummaryAsync(from, to, _currentUser.StoreId);
         return Ok(result);
     }
@@ -76,6 +92,7 @@ public class ReportsController : ControllerBase
     [HttpGet("export/excel")]
     public async Task<IActionResult> ExportExcel([FromQuery] string type, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int limit = 10)
     {
+        var check = CheckReportAccess(); if (check is not null) return check;
         var dateFrom = from ?? DateTime.UtcNow.Date.AddDays(-30);
         var dateTo = to ?? DateTime.UtcNow.Date;
 
