@@ -106,7 +106,7 @@ export default function StoreSettingsPage() {
         <div className="flex items-center gap-6">
           <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
             {logoSrc ? (
-              <img src={logoSrc} alt="Logo" className="w-full h-full object-cover rounded-xl" />
+              <img src={logoSrc} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/Logom.jpg'; }} />
             ) : (
               <Store size={32} className="text-gray-300" />
             )}

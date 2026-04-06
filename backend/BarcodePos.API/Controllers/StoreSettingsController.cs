@@ -14,11 +14,13 @@ public class StoreSettingsController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly ICurrentUser _currentUser;
+    private readonly IWebHostEnvironment _env;
 
-    public StoreSettingsController(AppDbContext db, ICurrentUser currentUser)
+    public StoreSettingsController(AppDbContext db, ICurrentUser currentUser, IWebHostEnvironment env)
     {
         _db = db;
         _currentUser = currentUser;
+        _env = env;
     }
 
     /// <summary>
@@ -86,26 +88,25 @@ public class StoreSettingsController : ControllerBase
             return BadRequest(new { success = false, message = "Dosya yüklenmedi." });
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (ext is not ".jpg" and not ".jpeg" and not ".png" and not ".webp")
-            return BadRequest(new { success = false, message = "Sadece JPG, PNG ve WebP dosyaları kabul edilir." });
+        if (ext is not ".jpg" and not ".jpeg" and not ".png" and not ".webp" and not ".gif" and not ".bmp" and not ".svg")
+            return BadRequest(new { success = false, message = "Desteklenen formatlar: JPG, PNG, WebP, GIF, BMP, SVG" });
 
         // MIME type kontrolü
-        var validMimes = new[] { "image/jpeg", "image/png", "image/webp" };
-        if (!validMimes.Contains(file.ContentType.ToLowerInvariant()))
-            return BadRequest(new { success = false, message = "Geçersiz dosya türü." });
+        if (!file.ContentType.StartsWith("image/"))
+            return BadRequest(new { success = false, message = "Sadece resim dosyaları kabul edilir." });
 
         var store = await _db.Stores.FindAsync(_currentUser.StoreId);
         if (store is null)
             return NotFound(new { success = false, message = "Mağaza bulunamadı." });
 
         // Uploads klasörünü oluştur
-        var uploadsDir = Path.Combine(AppContext.BaseDirectory, "wwwroot", "uploads", "logos");
+        var uploadsDir = Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), "uploads", "logos");
         Directory.CreateDirectory(uploadsDir);
 
         // Eski logoyu sil
         if (!string.IsNullOrEmpty(store.LogoPath))
         {
-            var oldPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", store.LogoPath.TrimStart('/'));
+            var oldPath = Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), store.LogoPath.TrimStart('/'));
             if (System.IO.File.Exists(oldPath))
                 System.IO.File.Delete(oldPath);
         }
@@ -135,7 +136,7 @@ public class StoreSettingsController : ControllerBase
 
         if (!string.IsNullOrEmpty(store.LogoPath))
         {
-            var oldPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", store.LogoPath.TrimStart('/'));
+            var oldPath = Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), store.LogoPath.TrimStart('/'));
             if (System.IO.File.Exists(oldPath))
                 System.IO.File.Delete(oldPath);
         }
