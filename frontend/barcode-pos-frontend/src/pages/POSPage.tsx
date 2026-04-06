@@ -56,7 +56,6 @@ export default function POSPage() {
     setCustomerId,
     setPaymentType,
     setPaidAmount,
-    addPaidAmount,
     setRoundingAmount,
     setDiscountTotal,
     addProduct,
@@ -275,7 +274,6 @@ export default function POSPage() {
     return () => window.removeEventListener('keydown', handler);
   }, [items, paymentType]);
 
-  const quickAmounts = [20, 50, 100, 200];
   const grandTotal = getRoundedGrandTotal();
 
   return (
@@ -484,39 +482,34 @@ export default function POSPage() {
             </span>
           </div>
 
-          {/* Hızlı tutar butonları */}
+          {/* Ödenen Tutar */}
           <div className="px-3 py-3 border-b border-gray-200">
-            <div className="grid grid-cols-4 gap-2">
-              {quickAmounts.map((amt) => (
-                <button
-                  key={amt}
-                  onClick={() => addPaidAmount(amt)}
-                  className="py-3 bg-gray-100 hover:bg-blue-100 rounded-lg text-base font-black text-gray-700 hover:text-blue-700 transition"
-                >
-                  {amt}
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              <button
-                onClick={() => addPaidAmount(20)}
-                className="py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm font-bold text-green-700 transition"
-              >
-                +20
-              </button>
-              <button
-                onClick={() => addPaidAmount(-20)}
-                className="py-2 bg-red-50 hover:bg-red-100 rounded-lg text-sm font-bold text-red-700 transition"
-              >
-                -20
-              </button>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Ödenen Tutar</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₺</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={paidAmount || ''}
+                  onChange={(e) => setPaidAmount(Math.max(0, +e.target.value || 0))}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-3 border-2 border-gray-300 rounded-lg text-lg font-black text-right tabular-nums focus:border-blue-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
               <button
                 onClick={() => setPaidAmount(grandTotal)}
-                className="py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-bold text-blue-700 transition"
+                className="px-5 py-3 bg-blue-600 text-white rounded-lg text-sm font-black hover:bg-blue-700 transition shrink-0"
               >
                 Tam
               </button>
             </div>
+            {paidAmount > 0 && paidAmount >= grandTotal && grandTotal > 0 && (
+              <div className="mt-1.5 text-right text-sm font-bold text-green-600">
+                Para Üstü: ₺{(paidAmount - grandTotal).toFixed(2)}
+              </div>
+            )}
           </div>
 
           {/* Ödeme tipi butonları */}
