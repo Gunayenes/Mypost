@@ -297,10 +297,31 @@ export default function POSPage() {
           <button type="submit" className="flex items-center gap-1.5 px-5 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition">
             <Search size={18} /> Ara
           </button>
-          <button type="button" className="flex items-center gap-1.5 px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!barcode.trim()) { setError('Barkod giriniz.'); return; }
+              try {
+                const { data: res } = await productsApi.getByBarcode(barcode.trim());
+                if (res.success && res.data) {
+                  setError('');
+                  setSuccessMsg(`${res.data.name} — ₺${res.data.salePrice.toFixed(2)} (KDV %${res.data.taxRate})`);
+                  setTimeout(() => setSuccessMsg(''), 4000);
+                } else { setError('Ürün bulunamadı.'); }
+              } catch { setError('Ürün bulunamadı.'); }
+            }}
+            className="flex items-center gap-1.5 px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition"
+          >
             <Tag size={18} /> Fiyat Gör
           </button>
-          <button type="button" className="flex items-center gap-1.5 px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition">
+          <button
+            type="button"
+            onClick={() => {
+              if (items.length === 0) { setError('Sepet boş, yazdırılacak bir şey yok.'); return; }
+              window.print();
+            }}
+            className="flex items-center gap-1.5 px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition"
+          >
             <Printer size={18} /> Yazdır
           </button>
         </form>
