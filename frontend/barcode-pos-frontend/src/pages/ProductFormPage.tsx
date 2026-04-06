@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { productsApi } from '@/api/products';
+import { productsApi, exchangeRateApi } from '@/api/products';
 import { categoriesApi } from '@/api/categories';
 import { stockApi } from '@/api/stock';
 import type { Product, Category, StockMovement } from '@/types';
@@ -76,6 +76,25 @@ export default function ProductFormPage() {
   const [barcodeSearch, setBarcodeSearch] = useState('');
   const [barcodeStatus, setBarcodeStatus] = useState<'idle' | 'waiting' | 'found' | 'new'>('idle');
   const [generatingBarcode, setGeneratingBarcode] = useState(false);
+  const [fetchingRate, setFetchingRate] = useState(false);
+
+  // USD seçildiğinde ve kur yoksa otomatik çek
+  const fetchExchangeRate = useCallback(async () => {
+    setFetchingRate(true);
+    try {
+      const { data: res } = await exchangeRateApi.getRate();
+      if (res.success && res.data) {
+        const rate = Math.round(res.data.usdTry * 100) / 100;
+        setForm(f => ({
+          ...f,
+          exchangeRate: rate,
+          costPrice: f.costPriceUsd > 0 && rate > 0 ? Math.round(f.costPriceUsd * rate * 100) / 100 : f.costPrice,
+          salePrice: f.salePriceUsd > 0 && rate > 0 ? Math.round(f.salePriceUsd * rate * 100) / 100 : f.salePrice,
+        }));
+      }
+    } catch { /* sessiz */ }
+    setFetchingRate(false);
+  }, []);
 
   // Kategorileri yükle
   useEffect(() => {
@@ -493,7 +512,10 @@ export default function ProductFormPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setCurrencyMode('USD')}
+                        onClick={() => {
+                          setCurrencyMode('USD');
+                          if (form.exchangeRate <= 0) fetchExchangeRate();
+                        }}
                         className={`flex items-center gap-1 px-4 py-1.5 rounded-md text-xs font-bold transition ${
                           currencyMode === 'USD'
                             ? 'bg-white text-green-700 shadow-sm'
@@ -518,26 +540,37 @@ export default function ProductFormPage() {
                           <label className="flex items-center gap-1.5 text-xs font-semibold text-green-800 mb-1.5">
                             <DollarSign size={13} /> Döviz Kuru (1 USD)
                           </label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500">₺</span>
-                            <input
-                              type="number"
-                              step="0.0001"
-                              value={form.exchangeRate || ''}
-                              onChange={(e) => {
-                                const rate = +e.target.value;
-                                setForm(f => ({
-                                  ...f,
-                                  exchangeRate: rate,
-                                  costPrice: f.costPriceUsd > 0 && rate > 0 ? Math.round(f.costPriceUsd * rate * 100) / 100 : f.costPrice,
-                                  salePrice: f.salePriceUsd > 0 && rate > 0 ? Math.round(f.salePriceUsd * rate * 100) / 100 : f.salePrice,
-                                }));
-                              }}
-                              placeholder="38.50"
-                              className="w-full pl-7 pr-3 py-2.5 border border-green-300 rounded-lg text-sm font-medium focus:border-green-500 outline-none bg-white"
-                              min={0}
-                              required
-                            />
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500">₺</span>
+                              <input
+                                type="number"
+                                step="0.0001"
+                                value={form.exchangeRate || ''}
+                                onChange={(e) => {
+                                  const rate = +e.target.value;
+                                  setForm(f => ({
+                                    ...f,
+                                    exchangeRate: rate,
+                                    costPrice: f.costPriceUsd > 0 && rate > 0 ? Math.round(f.costPriceUsd * rate * 100) / 100 : f.costPrice,
+                                    salePrice: f.salePriceUsd > 0 && rate > 0 ? Math.round(f.salePriceUsd * rate * 100) / 100 : f.salePrice,
+                                  }));
+                                }}
+                                placeholder="38.50"
+                                className="w-full pl-7 pr-3 py-2.5 border border-green-300 rounded-lg text-sm font-medium focus:border-green-500 outline-none bg-white"
+                                min={0}
+                                required
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={fetchExchangeRate}
+                              disabled={fetchingRate}
+                              className="px-3 py-2.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition disabled:opacity-50 shrink-0"
+                              title="Güncel kuru çek"
+                            >
+                              {fetchingRate ? <RotateCcw size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                            </button>
                           </div>
                         </div>
                         <div>

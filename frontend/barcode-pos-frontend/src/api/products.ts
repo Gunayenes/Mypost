@@ -59,6 +59,11 @@ export const productsApi = {
   },
 };
 
+export const exchangeRateApi = {
+  getRate: () =>
+    api.get<ApiResult<{ usdTry: number; updatedAt: string }>>('/exchange-rate'),
+};
+
 export interface BulkImportResult {
   totalRows: number;
   successCount: number;

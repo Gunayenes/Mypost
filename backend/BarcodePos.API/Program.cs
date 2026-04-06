@@ -111,6 +111,7 @@ try
 
     // ── Health Check ──
     builder.Services.AddHealthChecks();
+    builder.Services.AddHttpClient();
 
     // ── Rate Limiting ──
     builder.Services.AddRateLimiter(options =>
