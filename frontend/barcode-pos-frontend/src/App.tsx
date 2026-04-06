@@ -35,6 +35,7 @@ const PricingPage = lazy(() => import('@/pages/public/PricingPage'));
 const ContactPage = lazy(() => import('@/pages/public/ContactPage'));
 const RegisterPage = lazy(() => import('@/pages/public/RegisterPage'));
 const ServiceTrackingPage = lazy(() => import('@/pages/public/ServiceTrackingPage'));
+const WelcomePage = lazy(() => import('@/pages/WelcomePage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const EmailConfirmPage = lazy(() => import('@/pages/EmailConfirmPage'));
@@ -122,6 +123,7 @@ export default function App() {
 
       {/* Kayıt sayfası */}
       <Route path="/kayit" element={<RegisterPage />} />
+      <Route path="/hos-geldiniz" element={<WelcomePage />} />
       <Route path="/sifremi-unuttum" element={<ForgotPasswordPage />} />
       <Route path="/sifre-sifirla" element={<ResetPasswordPage />} />
       <Route path="/email-dogrula" element={<EmailConfirmPage />} />

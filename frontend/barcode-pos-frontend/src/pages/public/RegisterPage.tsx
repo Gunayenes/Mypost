@@ -62,7 +62,7 @@ export default function RegisterPage() {
 
       if (loginRes.success && loginRes.data) {
         login(loginRes.data);
-        navigate('/app');
+        navigate('/hos-geldiniz');
       } else {
         // Kayıt başarılı ama POS login başarısız — login sayfasına yönlendir
         navigate('/login');
