@@ -4,6 +4,7 @@ import { categoriesApi } from '@/api/categories';
 import { customersApi } from '@/api/customers';
 import { salesApi } from '@/api/sales';
 import { useCartStore } from '@/store/cartStore';
+import { useStoreSettings } from '@/store/storeSettingsStore';
 import { playBeep, playErrorBeep } from '@/utils/beep';
 import type { Product, Category, Customer } from '@/types';
 import {
@@ -43,6 +44,7 @@ export default function POSPage() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerResults, setCustomerResults] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const storeSettings = useStoreSettings((s) => s.settings);
   const [splitCash, setSplitCash] = useState(0);
   const [splitCard, setSplitCard] = useState(0);
 
@@ -276,6 +278,82 @@ export default function POSPage() {
 
   const grandTotal = getRoundedGrandTotal();
 
+  const printReceipt = () => {
+    if (items.length === 0) { setError('Sepet boş.'); return; }
+    const storeName = storeSettings?.name || 'KasaPlus';
+    const storePhone = storeSettings?.phone || '';
+    const storeAddress = storeSettings?.address || '';
+    const date = new Date();
+    const dateStr = date.toLocaleDateString('tr-TR');
+    const timeStr = date.toLocaleTimeString('tr-TR');
+    const subTotal = getSubTotal();
+    const taxTotal = getTaxTotal();
+    const disc = discountTotal;
+
+    const rows = items.map((item, i) => `
+      <tr>
+        <td style="text-align:left;padding:3px 0;font-size:12px;">${i + 1}. ${item.name}</td>
+        <td style="text-align:center;font-size:12px;">${item.quantity}</td>
+        <td style="text-align:right;font-size:12px;">${item.unitPrice.toFixed(2)}</td>
+        <td style="text-align:right;font-size:12px;">${(item.unitPrice * item.quantity).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fiş</title>
+    <style>
+      @page { margin: 0; size: 80mm auto; }
+      body { font-family: 'Courier New', monospace; width: 72mm; margin: 4mm auto; font-size: 12px; color: #000; }
+      .center { text-align: center; }
+      .bold { font-weight: bold; }
+      .line { border-top: 1px dashed #000; margin: 6px 0; }
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: left; font-size: 11px; border-bottom: 1px solid #000; padding: 2px 0; }
+      .right { text-align: right; }
+      .total-row { font-size: 14px; font-weight: bold; }
+    </style></head><body>
+      <div class="center bold" style="font-size:16px;margin-bottom:2px;">${storeName}</div>
+      ${storeAddress ? `<div class="center" style="font-size:10px;">${storeAddress}</div>` : ''}
+      ${storePhone ? `<div class="center" style="font-size:10px;">Tel: ${storePhone}</div>` : ''}
+      <div class="line"></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;">
+        <span>${dateStr}</span><span>${timeStr}</span>
+      </div>
+      ${selectedCustomer ? `<div style="font-size:11px;">Müşteri: ${selectedCustomer.fullName}</div>` : ''}
+      <div class="line"></div>
+      <table>
+        <tr><th>Ürün</th><th style="text-align:center;">Ad.</th><th class="right">Fiyat</th><th class="right">Tutar</th></tr>
+        ${rows}
+      </table>
+      <div class="line"></div>
+      <table>
+        <tr><td>Ara Toplam</td><td class="right">${subTotal.toFixed(2)} ₺</td></tr>
+        <tr><td>KDV</td><td class="right">${taxTotal.toFixed(2)} ₺</td></tr>
+        ${disc > 0 ? `<tr><td>İndirim</td><td class="right">-${disc.toFixed(2)} ₺</td></tr>` : ''}
+        ${roundingAmount !== 0 ? `<tr><td>Yuvarlama</td><td class="right">${roundingAmount > 0 ? '-' : '+'}${Math.abs(roundingAmount).toFixed(2)} ₺</td></tr>` : ''}
+      </table>
+      <div class="line"></div>
+      <div style="display:flex;justify-content:space-between;" class="total-row">
+        <span>TOPLAM</span><span>${grandTotal.toFixed(2)} ₺</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
+        <span>Ödeme: ${paymentType === 'Parcali' ? 'Parçalı' : paymentType === 'Kart' ? 'Kredi Kartı' : paymentType}</span>
+        <span>Ödenen: ${paidAmount.toFixed(2)} ₺</span>
+      </div>
+      ${paymentType === 'Parcali' ? `<div style="font-size:11px;">Nakit: ${splitCash.toFixed(2)} ₺ | Kart: ${splitCard.toFixed(2)} ₺</div>` : ''}
+      ${paidAmount > grandTotal ? `<div style="font-size:12px;"><b>Para Üstü: ${(paidAmount - grandTotal).toFixed(2)} ₺</b></div>` : ''}
+      <div class="line"></div>
+      <div class="center" style="font-size:10px;margin-top:6px;">Bizi tercih ettiğiniz için teşekkürler!</div>
+      <div class="center" style="font-size:9px;color:#888;margin-top:2px;">KasaPlus POS</div>
+    </body></html>`;
+
+    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => { printWindow.print(); printWindow.close(); };
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] -m-6">
       {/* ═══ ÜST BAR — Barkod + Tutar Göstergeleri ═══ */}
@@ -316,10 +394,7 @@ export default function POSPage() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (items.length === 0) { setError('Sepet boş, yazdırılacak bir şey yok.'); return; }
-              window.print();
-            }}
+            onClick={printReceipt}
             className="flex items-center gap-1.5 px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition"
           >
             <Printer size={18} /> Yazdır
