@@ -49,11 +49,13 @@ export default function POSPage() {
     paymentType,
     paidAmount,
     roundingAmount,
+    discountTotal,
     setCustomerId,
     setPaymentType,
     setPaidAmount,
     addPaidAmount,
     setRoundingAmount,
+    setDiscountTotal,
     addProduct,
     removeItem,
     updateQuantity,
@@ -229,7 +231,7 @@ export default function POSPage() {
         customerId,
         paymentType,
         paidAmount,
-        discountTotal: roundingAmount,
+        discountTotal: roundingAmount + discountTotal,
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -631,6 +633,24 @@ export default function POSPage() {
                 <span className="font-medium">KDV</span>
                 <span className="tabular-nums font-bold text-gray-800">₺{getTaxTotal().toFixed(2)}</span>
               </div>
+              {/* İndirim */}
+              {items.length > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-500">İndirim</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-red-400">-₺</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={discountTotal || ''}
+                      onChange={(e) => setDiscountTotal(Math.max(0, +e.target.value || 0))}
+                      placeholder="0.00"
+                      className="w-24 text-right text-sm font-bold tabular-nums border border-gray-200 rounded-md px-2 py-1 focus:border-red-400 focus:ring-1 focus:ring-red-200 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+              )}
               {roundingAmount !== 0 && (
                 <div className="flex justify-between text-amber-600">
                   <span className="font-medium">Yuvarlama</span>
