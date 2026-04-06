@@ -17,7 +17,7 @@ export default function ToastContainer() {
       const { type, message } = (e as CustomEvent).detail;
       const id = ++toastId;
       setToasts((prev) => [...prev, { id, type, message }]);
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
     };
     window.addEventListener('toast', handler);
     return () => window.removeEventListener('toast', handler);

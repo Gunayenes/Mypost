@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.' } }));
-        window.location.href = '/login';
+        setTimeout(() => { window.location.href = '/login'; }, 2000);
         return Promise.reject(new Error('Token expired'));
       }
     } catch { /* invalid token */ }
@@ -48,7 +48,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.' } }));
-      window.location.href = '/login';
+      setTimeout(() => { window.location.href = '/login'; }, 2000);
       return Promise.reject(error);
     }
     // Genel sunucu hataları — detaylı mesaj + hata kodu göster
