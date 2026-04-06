@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { storeSettingsApi, type StoreSettings } from '@/api/storeSettings';
+import { storeSettingsApi, getLogoUrl, type StoreSettings } from '@/api/storeSettings';
 import { useStoreSettings } from '@/store/storeSettingsStore';
-import { Store, Upload, Trash2, Save } from 'lucide-react';
+import { Store, Upload, Trash2, Save, Palette } from 'lucide-react';
 
 export default function StoreSettingsPage() {
   const [settings, setSettings] = useState<StoreSettings | null>(null);
@@ -28,10 +28,11 @@ export default function StoreSettingsPage() {
         name: settings.name,
         address: settings.address,
         phone: settings.phone,
+        themeColor: settings.themeColor,
       });
       if (res.data.success) {
         setMsg('Bilgiler kaydedildi.');
-        globalStore.update({ name: settings.name, address: settings.address, phone: settings.phone });
+        globalStore.update({ name: settings.name, address: settings.address, phone: settings.phone, themeColor: settings.themeColor });
       }
     } catch {
       setMsg('Bir hata oluştu.');
@@ -84,7 +85,7 @@ export default function StoreSettingsPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   if (!settings) return <p className="text-gray-500">Mağaza bilgileri yüklenemedi.</p>;
 
-  const logoSrc = logoPreview || (settings.logoPath ? `${import.meta.env.VITE_API_BASE_URL || ''}${settings.logoPath}` : null);
+  const logoSrc = logoPreview || getLogoUrl(settings.logoPath);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -179,6 +180,53 @@ export default function StoreSettingsPage() {
             <Save size={16} />
             {saving ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
+        </div>
+      </div>
+
+      {/* Tema Rengi */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Palette size={20} className="text-primary" />
+          <h2 className="text-lg font-semibold text-gray-900">Sidebar Rengi</h2>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { color: '#1a1a2e', label: 'Varsayılan' },
+            { color: '#1e293b', label: 'Koyu Gri' },
+            { color: '#0f172a', label: 'Lacivert' },
+            { color: '#14532d', label: 'Koyu Yeşil' },
+            { color: '#7c2d12', label: 'Kahverengi' },
+            { color: '#4c1d95', label: 'Mor' },
+            { color: '#1e3a5f', label: 'Mavi' },
+            { color: '#991b1b', label: 'Bordo' },
+            { color: '#115e59', label: 'Turkuaz' },
+            { color: '#3f3f46', label: 'Nötr' },
+          ].map(({ color, label }) => (
+            <button
+              key={color}
+              type="button"
+              onClick={() => setSettings({ ...settings, themeColor: color })}
+              className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition ${
+                (settings.themeColor || '#1a1a2e') === color
+                  ? 'border-primary ring-2 ring-primary/30'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-lg" style={{ backgroundColor: color }} />
+              <span className="text-[10px] font-medium text-gray-500">{label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-3 mt-4">
+          <label htmlFor="customColor" className="text-xs font-medium text-gray-600">Özel Renk:</label>
+          <input
+            id="customColor"
+            type="color"
+            value={settings.themeColor || '#1a1a2e'}
+            onChange={(e) => setSettings({ ...settings, themeColor: e.target.value })}
+            className="w-10 h-10 rounded-lg cursor-pointer border border-gray-200"
+          />
+          <span className="text-xs text-gray-400 font-mono">{settings.themeColor || '#1a1a2e'}</span>
         </div>
       </div>
     </div>

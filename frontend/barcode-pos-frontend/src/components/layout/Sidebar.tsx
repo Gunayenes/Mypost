@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from 'react';
 import { isElectron } from '@/utils/platform';
 import { useStoreSettings } from '@/store/storeSettingsStore';
+import { getLogoUrl } from '@/api/storeSettings';
 
 const navItems = [
   { path: '', icon: LayoutDashboard, label: 'Dashboard' },
@@ -47,15 +48,17 @@ export default function Sidebar() {
     <aside
       className={`${
         collapsed ? 'w-16' : 'w-60'
-      } bg-sidebar text-white flex flex-col transition-all duration-200 shrink-0`}
+      } text-white flex flex-col transition-all duration-200 shrink-0`}
+      style={{ backgroundColor: settings?.themeColor || '#1a1a2e' }}
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
         <div className="flex items-center gap-2 overflow-hidden">
           <img
-            src={settings?.logoPath ? `${import.meta.env.VITE_API_BASE_URL || ''}${settings.logoPath}` : '/Logom.jpg'}
+            src={getLogoUrl(settings?.logoPath) || '/Logom.jpg'}
             alt={settings?.name || 'KasaPlus'}
             className="w-8 h-8 rounded-md object-cover shrink-0"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/Logom.jpg'; }}
           />
           {!collapsed && (
             <span className="text-lg font-bold tracking-tight truncate">

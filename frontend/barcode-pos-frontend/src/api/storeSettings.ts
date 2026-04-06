@@ -7,13 +7,20 @@ export interface StoreSettings {
   address?: string;
   phone?: string;
   logoPath?: string;
+  themeColor?: string;
+}
+
+/** Logo URL'ini döndürür (dev: Vite proxy, prod: aynı origin) */
+export function getLogoUrl(logoPath?: string | null): string | null {
+  if (!logoPath) return null;
+  return logoPath; // /uploads/logos/... — Vite proxy ve production'da direkt çalışır
 }
 
 export const storeSettingsApi = {
   get: () =>
     api.get<ApiResult<StoreSettings>>('/store-settings'),
 
-  update: (data: { name?: string; address?: string; phone?: string }) =>
+  update: (data: { name?: string; address?: string; phone?: string; themeColor?: string }) =>
     api.put<ApiResult<void>>('/store-settings', data),
 
   uploadLogo: (file: File) => {

@@ -44,7 +44,8 @@ public class StoreSettingsController : ControllerBase
                 store.Name,
                 store.Address,
                 store.Phone,
-                store.LogoPath
+                store.LogoPath,
+                store.ThemeColor
             }
         });
     }
@@ -65,6 +66,8 @@ public class StoreSettingsController : ControllerBase
             store.Address = request.Address.Trim();
         if (request.Phone is not null)
             store.Phone = request.Phone.Trim();
+        if (request.ThemeColor is not null)
+            store.ThemeColor = request.ThemeColor.Trim();
 
         await _db.SaveChangesAsync();
 
@@ -149,4 +152,5 @@ public class UpdateStoreRequest
     public string? Name { get; set; }
     public string? Address { get; set; }
     public string? Phone { get; set; }
+    public string? ThemeColor { get; set; }
 }

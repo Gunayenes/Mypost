@@ -12,6 +12,7 @@ public class Store : AuditableEntity
     public string? Address { get; set; }
     public string? Phone { get; set; }
     public string? LogoPath { get; set; }
+    public string? ThemeColor { get; set; }
     public bool IsActive { get; set; } = true;
 
     // Navigation
