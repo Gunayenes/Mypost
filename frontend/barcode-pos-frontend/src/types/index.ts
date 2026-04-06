@@ -191,6 +191,8 @@ export interface CreateSaleRequest {
   paymentType: string;
   paidAmount: number;
   discountTotal: number;
+  paidCash?: number;
+  paidCard?: number;
   items: CreateSaleItemRequest[];
 }
 

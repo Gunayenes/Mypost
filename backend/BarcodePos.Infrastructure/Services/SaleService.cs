@@ -115,6 +115,8 @@ public class SaleService : ISaleService
                 DiscountTotal = totalDiscount,
                 GrandTotal = grandTotal,
                 PaymentType = paymentType,
+                PaidCash = GetPaidCash(paymentType, request),
+                PaidCard = GetPaidCard(paymentType, request),
                 Status = SaleStatus.Tamamlandi,
                 Items = saleItems
             };
@@ -389,6 +391,8 @@ public class SaleService : ISaleService
         GrandTotal = sale.GrandTotal,
         PaymentType = sale.PaymentType.ToString(),
         PaymentTypeName = MapPaymentTypeName(sale.PaymentType),
+        PaidCash = sale.PaidCash,
+        PaidCard = sale.PaidCard,
         Status = sale.Status.ToString(),
         StatusName = MapStatusName(sale.Status),
         CashierName = cashierName,
@@ -405,11 +409,26 @@ public class SaleService : ISaleService
         }).ToList()
     };
 
+    private static decimal GetPaidCash(PaymentType type, CreateSaleRequest req) => type switch
+    {
+        PaymentType.Parcali => req.PaidCash,
+        PaymentType.Nakit => req.PaidAmount,
+        _ => 0
+    };
+
+    private static decimal GetPaidCard(PaymentType type, CreateSaleRequest req) => type switch
+    {
+        PaymentType.Parcali => req.PaidCard,
+        PaymentType.Kart => req.PaidAmount,
+        _ => 0
+    };
+
     private static string MapPaymentTypeName(PaymentType type) => type switch
     {
         PaymentType.Nakit => "Nakit",
         PaymentType.Kart => "Kredi Kartı",
         PaymentType.Veresiye => "Veresiye",
+        PaymentType.Parcali => "Parçalı",
         _ => type.ToString()
     };
 

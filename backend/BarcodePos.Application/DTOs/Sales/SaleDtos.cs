@@ -6,6 +6,8 @@ public class CreateSaleRequest
     public string PaymentType { get; set; } = string.Empty;
     public decimal PaidAmount { get; set; }
     public decimal DiscountTotal { get; set; }
+    public decimal PaidCash { get; set; }
+    public decimal PaidCard { get; set; }
     public List<CreateSaleItemRequest> Items { get; set; } = [];
 }
 
@@ -27,6 +29,8 @@ public class SaleResponseDto
     public decimal GrandTotal { get; set; }
     public string PaymentType { get; set; } = string.Empty;
     public string PaymentTypeName { get; set; } = string.Empty;
+    public decimal PaidCash { get; set; }
+    public decimal PaidCard { get; set; }
     public string Status { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public string CashierName { get; set; } = string.Empty;

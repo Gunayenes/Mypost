@@ -20,6 +20,8 @@ public class Sale : BaseEntity
     public decimal DiscountTotal { get; set; }
     public decimal GrandTotal { get; set; }
     public PaymentType PaymentType { get; set; }
+    public decimal PaidCash { get; set; }
+    public decimal PaidCard { get; set; }
     public SaleStatus Status { get; set; } = SaleStatus.Tamamlandi;
 
     // Navigation

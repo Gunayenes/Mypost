@@ -23,6 +23,7 @@ import {
   Tag,
   User,
   UserPlus,
+  Split,
 } from 'lucide-react';
 
 export default function POSPage() {
@@ -42,6 +43,8 @@ export default function POSPage() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerResults, setCustomerResults] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [splitCash, setSplitCash] = useState(0);
+  const [splitCard, setSplitCard] = useState(0);
 
   const {
     items,
@@ -230,7 +233,9 @@ export default function POSPage() {
       const { data: res } = await salesApi.create({
         customerId,
         paymentType,
-        paidAmount,
+        paidAmount: paymentType === 'Parcali' ? splitCash + splitCard : paidAmount,
+        paidCash: paymentType === 'Parcali' ? splitCash : 0,
+        paidCard: paymentType === 'Parcali' ? splitCard : 0,
         discountTotal: roundingAmount + discountTotal,
         items: items.map((i) => ({
           productId: i.productId,
@@ -241,6 +246,8 @@ export default function POSPage() {
       if (res.success) {
         setSuccessMsg(`✓ Satış tamamlandı! Fiş: ${res.data?.receiptNumber}`);
         clearCart();
+        setSplitCash(0);
+        setSplitCard(0);
         handleClearCustomer();
         setTimeout(() => setSuccessMsg(''), 5000);
       } else {
@@ -260,6 +267,7 @@ export default function POSPage() {
       if (e.key === 'F8') { e.preventDefault(); setPaymentType('Nakit'); }
       if (e.key === 'F9') { e.preventDefault(); setPaymentType('Kart'); }
       if (e.key === 'F10') { e.preventDefault(); setPaymentType('Veresiye'); }
+      if (e.key === 'F11') { e.preventDefault(); setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }
       if (e.key === 'F12') { e.preventDefault(); handleCompleteSale(); }
       if (e.key === 'Escape') { clearCart(); handleClearCustomer(); inputRef.current?.focus(); }
     };
@@ -513,44 +521,106 @@ export default function POSPage() {
 
           {/* Ödeme tipi butonları */}
           <div className="px-3 py-3 border-b border-gray-200 space-y-2">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               <button
                 onClick={() => setPaymentType('Nakit')}
-                className={`flex flex-col items-center gap-1 py-3.5 rounded-lg text-sm font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
                   paymentType === 'Nakit'
                     ? 'border-green-500 bg-green-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
                 }`}
               >
-                <Banknote size={22} />
+                <Banknote size={20} />
                 <span>NAKİT</span>
                 <span className="text-[10px] font-normal opacity-70">F8</span>
               </button>
               <button
                 onClick={() => setPaymentType('Kart')}
-                className={`flex flex-col items-center gap-1 py-3.5 rounded-lg text-sm font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
                   paymentType === 'Kart'
                     ? 'border-blue-500 bg-blue-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
                 }`}
               >
-                <CreditCard size={22} />
+                <CreditCard size={20} />
                 <span>POS</span>
                 <span className="text-[10px] font-normal opacity-70">F9</span>
               </button>
               <button
                 onClick={() => setPaymentType('Veresiye')}
-                className={`flex flex-col items-center gap-1 py-3.5 rounded-lg text-sm font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
                   paymentType === 'Veresiye'
                     ? 'border-orange-500 bg-orange-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50'
                 }`}
               >
-                <Wallet size={22} />
+                <Wallet size={20} />
                 <span>VERESİYE</span>
                 <span className="text-[10px] font-normal opacity-70">F10</span>
               </button>
+              <button
+                onClick={() => { setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }}
+                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
+                  paymentType === 'Parcali'
+                    ? 'border-purple-500 bg-purple-500 text-white'
+                    : 'border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50'
+                }`}
+              >
+                <Split size={20} />
+                <span>PARÇALI</span>
+                <span className="text-[10px] font-normal opacity-70">F11</span>
+              </button>
             </div>
+
+            {/* Parçalı ödeme detayları */}
+            {paymentType === 'Parcali' && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Banknote size={14} className="text-green-600 shrink-0" />
+                  <span className="text-xs font-semibold text-gray-600 w-14">Nakit</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={splitCash || ''}
+                      onChange={(e) => {
+                        const cash = Math.max(0, +e.target.value || 0);
+                        setSplitCash(cash);
+                        setPaidAmount(cash + splitCard);
+                      }}
+                      placeholder="0.00"
+                      className="w-full pl-6 pr-2 py-2 border border-purple-300 rounded-lg text-sm font-bold text-right focus:border-purple-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CreditCard size={14} className="text-blue-600 shrink-0" />
+                  <span className="text-xs font-semibold text-gray-600 w-14">Kart</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={splitCard || ''}
+                      onChange={(e) => {
+                        const card = Math.max(0, +e.target.value || 0);
+                        setSplitCard(card);
+                        setPaidAmount(splitCash + card);
+                      }}
+                      placeholder="0.00"
+                      className="w-full pl-6 pr-2 py-2 border border-purple-300 rounded-lg text-sm font-bold text-right focus:border-purple-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs pt-1 border-t border-purple-200">
+                  <span className="text-purple-700 font-semibold">Toplam Ödenen</span>
+                  <span className="font-black text-purple-800">₺{(splitCash + splitCard).toFixed(2)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Müşteri Seçimi — Veresiye seçilince veya müşteri atanmışsa göster */}
