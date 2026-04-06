@@ -235,7 +235,13 @@ export default function ServiceTable({
                         <button onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} className={actionBtn('bg-red-500')} title="Sil">
                           <Trash2 size={13} />
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/${s.customerPhone?.replace(/\D/g, '')}`, '_blank'); }} className={actionBtn('bg-green-600')} title="WhatsApp">
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          const phone = s.customerPhone?.replace(/\D/g, '') || '';
+                          const trackUrl = `${window.location.origin}/servis-takip`;
+                          const msg = encodeURIComponent(`Merhaba ${s.customerName}, servis kaydınız oluşturulmuştur.\n\nServis No: ${s.serviceNumber}\nCihaz: ${s.deviceName}\n\nTakip için: ${trackUrl}\n\nServis numaranız veya telefon numaranız ile sorgulama yapabilirsiniz.`);
+                          window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                        }} className={actionBtn('bg-green-600')} title="Takip Linki Gönder (WhatsApp)">
                           <MessageCircle size={13} />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onSelect(s.id); }} className={actionBtn('bg-yellow-500')} title="Not">
