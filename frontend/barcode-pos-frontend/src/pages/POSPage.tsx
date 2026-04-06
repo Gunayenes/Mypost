@@ -47,6 +47,7 @@ export default function POSPage() {
   const storeSettings = useStoreSettings((s) => s.settings);
   const [splitCash, setSplitCash] = useState(0);
   const [splitCard, setSplitCard] = useState(0);
+  const [priceView, setPriceView] = useState<{ name: string; price: number; tax: number; barcode: string } | null>(null);
 
   const {
     items,
@@ -383,8 +384,7 @@ export default function POSPage() {
                 const { data: res } = await productsApi.getByBarcode(barcode.trim());
                 if (res.success && res.data) {
                   setError('');
-                  setSuccessMsg(`${res.data.name} — ₺${res.data.salePrice.toFixed(2)} (KDV %${res.data.taxRate})`);
-                  setTimeout(() => setSuccessMsg(''), 4000);
+                  setPriceView({ name: res.data.name, price: res.data.salePrice, tax: res.data.taxRate, barcode: res.data.barcode });
                 } else { setError('Ürün bulunamadı.'); }
               } catch { setError('Ürün bulunamadı.'); }
             }}
@@ -889,6 +889,36 @@ export default function POSPage() {
           </div>
         </div>
       </div>
+
+      {/* Fiyat Gör Overlay */}
+      {priceView && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => setPriceView(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl p-10 text-center max-w-lg w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-6xl mb-6">🏷️</div>
+            <p className="text-sm text-gray-400 font-mono mb-2">{priceView.barcode}</p>
+            <h2 className="text-3xl font-black text-gray-900 mb-6">{priceView.name}</h2>
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl py-8 px-6 mb-6">
+              <p className="text-white text-lg font-medium mb-1">Satış Fiyatı</p>
+              <p className="text-white text-6xl font-black tabular-nums">
+                ₺{priceView.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-white/70 text-sm mt-2">KDV %{priceView.tax} dahil</p>
+            </div>
+            <button
+              onClick={() => setPriceView(null)}
+              className="px-8 py-3 bg-gray-100 text-gray-700 rounded-xl text-lg font-bold hover:bg-gray-200 transition"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
