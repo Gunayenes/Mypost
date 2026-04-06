@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, Info, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 export interface Toast {
   id: number;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   message: string;
 }
 
@@ -25,11 +25,12 @@ export default function ToastContainer() {
 
   const remove = (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  const icons = { success: CheckCircle, error: XCircle, info: Info };
+  const icons = { success: CheckCircle, error: XCircle, info: Info, warning: AlertTriangle };
   const colors = {
     success: 'bg-green-50 border-green-300 text-green-800',
     error: 'bg-red-50 border-red-300 text-red-800',
     info: 'bg-blue-50 border-blue-300 text-blue-800',
+    warning: 'bg-amber-50 border-amber-300 text-amber-800',
   };
 
   if (toasts.length === 0) return null;
