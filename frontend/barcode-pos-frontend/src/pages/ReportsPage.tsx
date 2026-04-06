@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { reportsApi } from '@/api/dashboard';
 import { servicesApi } from '@/api/services';
 import type { ServiceListItem } from '@/types';
@@ -87,7 +87,6 @@ const defaultEndDate = new Date().toISOString().split('T')[0];
 export default function ReportsPage() {
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
-  const [selectedDate, setSelectedDate] = useState(defaultEndDate);
   const [activeTab, setActiveTab] = useState<TabKey>('daily-closing');
   const [loading, setLoading] = useState(false);
 
@@ -107,7 +106,7 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const [closingRes, salesRes, profitRes, topRes, payRes, lowRes] = await Promise.all([
-        reportsApi.dailyClosingReport(selectedDate),
+        reportsApi.dailyClosingReport(endDate),
         reportsApi.salesReport(startDate, endDate),
         reportsApi.profitReport(startDate, endDate),
         reportsApi.topProducts(startDate, endDate),
@@ -131,6 +130,9 @@ export default function ReportsPage() {
     }
     setLoading(false);
   };
+
+  // İlk açılışta otomatik yükle
+  useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportExcel = async (type: string) => {
     try {
@@ -178,23 +180,14 @@ export default function ReportsPage() {
       {/* Tarih seçimi + butonlar */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex flex-wrap items-end gap-3 mb-4">
-          {activeTab === 'daily-closing' ? (
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Rapor Tarihi</label>
-              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Başlangıç</label>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Bitiş</label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
-              </div>
-            </>
-          )}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Başlangıç</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Bitiş</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
+          </div>
           <button onClick={loadAll} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
             {loading ? <Loader2 size={14} className="animate-spin" /> : null}
             {loading ? 'Yükleniyor...' : 'Rapor Getir'}
