@@ -49,6 +49,14 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.' } }));
       window.location.href = '/login';
+      return Promise.reject(error);
+    }
+    // Genel sunucu hataları — detaylı mesaj + hata kodu göster
+    if (error.response?.status >= 500) {
+      const data = error.response?.data;
+      const msg = data?.message || 'Sunucu hatası oluştu.';
+      const errorId = data?.errorId ? ` (Hata kodu: ${data.errorId})` : '';
+      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: `${msg}${errorId}` } }));
     }
     return Promise.reject(error);
   }

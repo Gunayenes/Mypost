@@ -189,7 +189,16 @@ try
 
     // ── Middleware pipeline ──
     app.UseMiddleware<GlobalExceptionMiddleware>();
-    app.UseSerilogRequestLogging();
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+        {
+            diagnosticContext.Set("UserId", httpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous");
+            diagnosticContext.Set("UserRole", httpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "-");
+            diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        };
+        options.MessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0}ms | User: {UserId} ({UserRole}) | IP: {ClientIP}";
+    });
 
     if (app.Environment.IsDevelopment())
     {
