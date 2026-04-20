@@ -32,11 +32,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <img src="/carisoftlogo.png" alt="Cari Soft" className="w-12 h-12 object-contain group-hover:scale-105 transition-transform" />
-            <span className="text-xl font-bold text-slate-900">
-              Cari<span className="text-primary-600">Soft</span>
-            </span>
+          <Link to="/" className="flex items-center group">
+            <img src="/carisoftlogo.png" alt="Cari Soft" className="h-14 lg:h-16 w-auto object-contain group-hover:scale-105 transition-transform" />
           </Link>
 
           {/* Desktop links */}
