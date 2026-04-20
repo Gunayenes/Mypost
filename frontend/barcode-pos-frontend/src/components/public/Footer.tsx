@@ -37,7 +37,7 @@ export default function Footer() {
             <Link to="/" className="flex items-center gap-2.5 mb-4">
               <img src="/Logom.jpg" alt="Cari Soft" className="w-9 h-9 rounded-xl object-cover" />
               <span className="text-xl font-bold text-white">
-                Kasa<span className="text-primary-400">Plus</span>
+                Cari<span className="text-primary-400">Soft</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-slate-400 max-w-xs">
