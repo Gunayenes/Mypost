@@ -16,7 +16,7 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("KasaPlus API başlatılıyor...");
+    Log.Information("Cari Soft API başlatılıyor...");
 
     // ── .env dosyasından ortam değişkenlerini yükle ──
     var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
@@ -43,7 +43,7 @@ try
         loggerConfig
             .ReadFrom.Configuration(context.Configuration)
             .Enrich.FromLogContext()
-            .Enrich.WithProperty("Application", "KasaPlus")
+            .Enrich.WithProperty("Application", "Cari Soft")
             .WriteTo.Console()
             .WriteTo.File(
                 path: "logs/barcodepos-.log",
@@ -205,8 +205,8 @@ try
         app.MapOpenApi();
         app.UseSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/openapi/v1.json", "KasaPlus API v1");
-            options.DocumentTitle = "KasaPlus API - Swagger UI";
+            options.SwaggerEndpoint("/openapi/v1.json", "Cari Soft API v1");
+            options.DocumentTitle = "Cari Soft API - Swagger UI";
         });
     }
 

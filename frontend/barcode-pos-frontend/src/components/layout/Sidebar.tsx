@@ -56,13 +56,13 @@ export default function Sidebar() {
         <div className="flex items-center gap-2 overflow-hidden">
           <img
             src={getLogoUrl(settings?.logoPath) || '/Logom.jpg'}
-            alt={settings?.name || 'KasaPlus'}
+            alt={settings?.name || 'Cari Soft'}
             className="w-8 h-8 rounded-md object-cover shrink-0"
             onError={(e) => { (e.target as HTMLImageElement).src = '/Logom.jpg'; }}
           />
           {!collapsed && (
             <span className="text-lg font-bold tracking-tight truncate">
-              {settings?.name || 'KasaPlus'}
+              {settings?.name || 'Cari Soft'}
             </span>
           )}
         </div>

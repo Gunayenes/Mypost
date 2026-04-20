@@ -35,7 +35,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <img src="/Logom.jpg" alt="KasaPlus" className="w-9 h-9 rounded-xl object-cover" />
+              <img src="/Logom.jpg" alt="Cari Soft" className="w-9 h-9 rounded-xl object-cover" />
               <span className="text-xl font-bold text-white">
                 Kasa<span className="text-primary-400">Plus</span>
               </span>
@@ -68,7 +68,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="py-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} KasaPlus. Tüm hakları saklıdır.
+            © {new Date().getFullYear()} Cari Soft. Tüm hakları saklıdır.
           </p>
           <div className="flex items-center gap-4">
             <a href="https://wa.me/905427460197" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white transition-colors" aria-label="WhatsApp">

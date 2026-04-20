@@ -1,18 +1,18 @@
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  KasaPlus — Tek Komutla Dağıtım Paketi Oluşturma          ║
+# ║  Cari Soft — Tek Komutla Dağıtım Paketi Oluşturma          ║
 # ║  Kullanım: PowerShell'de ./deploy.ps1 çalıştırın           ║
 # ╚══════════════════════════════════════════════════════════════╝
 
 $ErrorActionPreference = "Stop"
 $ROOT = $PSScriptRoot
-$OUTPUT = "$ROOT\KasaPlus-Setup"
+$OUTPUT = "$ROOT\Cari Soft-Setup"
 $FRONTEND = "$ROOT\frontend\barcode-pos-frontend"
 $BACKEND = "$ROOT\backend\BarcodePos.API"
 $WWWROOT = "$BACKEND\wwwroot"
 
 Write-Host ""
 Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  KasaPlus Dagitim Paketi Olusturuluyor    " -ForegroundColor Cyan
+Write-Host "  Cari Soft Dagitim Paketi Olusturuluyor    " -ForegroundColor Cyan
 Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 
@@ -54,13 +54,13 @@ if (Test-Path $licenseDbSrc) {
 # ── 5. Başlatma scriptleri oluştur ──
 Write-Host "[5/5] Baslat scripti olusturuluyor..." -ForegroundColor Yellow
 
-# KasaPlus.bat — çift tıkla başlat
+# Cari Soft.bat — çift tıkla başlat
 @"
 @echo off
-title KasaPlus - Akilli Satis Noktasi
+title Cari Soft - Akilli Satis Noktasi
 echo.
 echo ========================================
-echo   KasaPlus baslatiliyor...
+echo   Cari Soft baslatiliyor...
 echo   Kapatmak icin bu pencereyi kapatin.
 echo ========================================
 echo.
@@ -78,15 +78,15 @@ echo.
 
 start http://localhost:5050
 BarcodePos.API.exe
-"@ | Out-File -FilePath "$OUTPUT\KasaPlus.bat" -Encoding ascii
+"@ | Out-File -FilePath "$OUTPUT\Cari Soft.bat" -Encoding ascii
 
 # Kur.bat — ilk kurulum
 @"
 @echo off
-title KasaPlus - Ilk Kurulum
+title Cari Soft - Ilk Kurulum
 echo.
 echo ==========================================
-echo   KasaPlus Ilk Kurulum
+echo   Cari Soft Ilk Kurulum
 echo ==========================================
 echo.
 echo Veritabani olusturuluyor...
@@ -102,7 +102,7 @@ echo ==========================================
 echo   Kurulum tamamlandi!
 echo.
 echo   Lisans aktivasyonu gereklidir.
-echo   Baslatmak icin KasaPlus.bat calistiriniz.
+echo   Baslatmak icin Cari Soft.bat calistiriniz.
 echo ==========================================
 echo.
 pause
@@ -111,7 +111,7 @@ pause
 # KURULUM.txt
 @"
 ============================================
-  KasaPlus - Kurulum Kilavuzu
+  Cari Soft - Kurulum Kilavuzu
 ============================================
 
 GEREKSINIMLER:
@@ -121,12 +121,12 @@ GEREKSINIMLER:
 KURULUM ADIMLARI:
 
   1. Bu klasoru PC'ye kopyalayin
-     Ornek: C:\KasaPlus\
+     Ornek: C:\Cari Soft\
 
   2. "Kur.bat" dosyasini YONETICI OLARAK calistirin
      (Sag tikla > Yonetici olarak calistir)
 
-  3. Kurulum tamamlaninca "KasaPlus.bat" ile baslatabilirsiniz
+  3. Kurulum tamamlaninca "Cari Soft.bat" ile baslatabilirsiniz
 
   4. Tarayicida otomatik acilir: http://localhost:5050
 

@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8">
         <div className="flex flex-col items-center mb-8">
-          <img src="/Logom.jpg" alt="KasaPlus" className="w-16 h-16 rounded-xl object-cover mb-3" />
+          <img src="/Logom.jpg" alt="Cari Soft" className="w-16 h-16 rounded-xl object-cover mb-3" />
           <h1 className="text-2xl font-bold text-gray-900">Şifre Sıfırla</h1>
           <p className="text-sm text-gray-500 mt-1 text-center">
             Yeni şifrenizi belirleyin.

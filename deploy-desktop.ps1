@@ -1,17 +1,17 @@
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  KasaPlus — Masaüstü Uygulaması (Electron) Oluşturma      ║
+# ║  Cari Soft — Masaüstü Uygulaması (Electron) Oluşturma      ║
 # ║  Kullanım: PowerShell'de ./deploy-desktop.ps1 çalıştırın   ║
 # ║  Önce deploy.ps1 çalıştırılmalıdır!                        ║
 # ╚══════════════════════════════════════════════════════════════╝
 
 $ErrorActionPreference = "Stop"
 $ROOT = $PSScriptRoot
-$OUTPUT = "$ROOT\KasaPlus-Setup"
+$OUTPUT = "$ROOT\Cari Soft-Setup"
 $FRONTEND = "$ROOT\frontend\barcode-pos-frontend"
 
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  KasaPlus Masaustu Uygulamasi Olusturuluyor  " -ForegroundColor Cyan
+Write-Host "  Cari Soft Masaustu Uygulamasi Olusturuluyor  " -ForegroundColor Cyan
 Write-Host "═══════════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 
@@ -72,7 +72,7 @@ if ($installer) {
 }
 Write-Host ""
 Write-Host "  Kurulum: Installer'i cift tikla, 'Kur' de." -ForegroundColor Yellow
-Write-Host "  Calistirma: Masaustundeki 'KasaPlus' ikonuna tikla." -ForegroundColor Yellow
+Write-Host "  Calistirma: Masaustundeki 'Cari Soft' ikonuna tikla." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  NOT: Ek kurulum gerektirmez (SQLite + self-contained)." -ForegroundColor Gray
 Write-Host ""

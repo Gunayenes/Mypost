@@ -22,7 +22,7 @@ public class TestController : ControllerBase
             success = true,
             data = new
             {
-                message = "KasaPlus API çalışıyor.",
+                message = "Cari Soft API çalışıyor.",
                 timestamp = DateTime.UtcNow,
                 environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
             }

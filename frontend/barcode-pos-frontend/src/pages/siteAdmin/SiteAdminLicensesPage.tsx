@@ -101,7 +101,7 @@ export default function SiteAdminLicensesPage() {
     let p = phone.replace(/[^0-9+]/g, '');
     if (p.startsWith('0')) p = '90' + p.substring(1);
     if (!p.startsWith('+')) p = '+' + p;
-    const msg = encodeURIComponent(`KasaPlus Lisans Anahtarınız:\n\n${key}\n\nUygulamada Ayarlar > Lisans Aktivasyonu bölümüne yapıştırın.`);
+    const msg = encodeURIComponent(`Cari Soft Lisans Anahtarınız:\n\n${key}\n\nUygulamada Ayarlar > Lisans Aktivasyonu bölümüne yapıştırın.`);
     window.open(`https://wa.me/${p.replace('+', '')}?text=${msg}`, '_blank');
   };
 

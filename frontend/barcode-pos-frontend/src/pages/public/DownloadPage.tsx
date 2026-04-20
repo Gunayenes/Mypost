@@ -11,7 +11,7 @@ const requirements = [
 const steps = [
   { n: '1', title: 'İndirin', desc: 'Aşağıdaki butona tıklayarak kurulum dosyasını indirin.' },
   { n: '2', title: 'Kurun', desc: 'İndirilen dosyayı çalıştırın ve kurulum sihirbazını takip edin.' },
-  { n: '3', title: 'Kullanın', desc: 'Masaüstündeki KasaPlus ikonuna tıklayarak başlayın.' },
+  { n: '3', title: 'Kullanın', desc: 'Masaüstündeki Cari Soft ikonuna tıklayarak başlayın.' },
 ];
 
 export default function DownloadPage() {
@@ -25,7 +25,7 @@ export default function DownloadPage() {
                 Masaüstü Uygulaması
               </span>
               <h1 className="mt-3 text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                KasaPlus'ı <span className="text-primary-600">indirin</span>
+                Cari Soft'ı <span className="text-primary-600">indirin</span>
               </h1>
               <p className="mt-4 text-lg text-slate-500">
                 Windows masaüstü uygulaması ile internet olmadan da satış yapın.
@@ -39,7 +39,7 @@ export default function DownloadPage() {
               <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Monitor className="text-primary-600" size={32} />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">KasaPlus v1.0.0</h2>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Cari Soft v1.0.0</h2>
               <p className="text-sm text-slate-500 mb-6">Windows 10/11 · 64-bit · ~85 MB</p>
               <a
                 href="https://github.com/Gunayenes/Mypost/releases/latest"

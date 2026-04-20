@@ -62,8 +62,8 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <img src="/Logom.jpg" alt="KasaPlus" className="w-16 h-16 rounded-xl object-cover mb-3" />
-          <h1 className="text-2xl font-bold text-gray-900">KasaPlus</h1>
+          <img src="/Logom.jpg" alt="Cari Soft" className="w-16 h-16 rounded-xl object-cover mb-3" />
+          <h1 className="text-2xl font-bold text-gray-900">Cari Soft</h1>
           <p className="text-sm text-gray-500 mt-1">Akıllı Satış Noktası</p>
         </div>
 

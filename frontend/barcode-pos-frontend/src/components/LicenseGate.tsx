@@ -74,7 +74,7 @@ export default function LicenseGate({ children }: LicenseGateProps) {
   const requestLicenseViaWhatsApp = () => {
     const machineId = status?.machineId ?? '';
     const msg = encodeURIComponent(
-      `KasaPlus Lisans Talebi\n\nMakine ID: ${machineId}\n\nMerhaba, KasaPlus uygulaması için lisans anahtarı talep ediyorum.`
+      `Cari Soft Lisans Talebi\n\nMakine ID: ${machineId}\n\nMerhaba, Cari Soft uygulaması için lisans anahtarı talep ediyorum.`
     );
     window.open(`https://wa.me/${SUPPORT_PHONE}?text=${msg}`, '_blank');
   };
@@ -98,8 +98,8 @@ export default function LicenseGate({ children }: LicenseGateProps) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
         {/* Header */}
         <div className="flex flex-col items-center mb-6">
-          <img src="/Logom.jpg" alt="KasaPlus" className="w-16 h-16 rounded-xl object-cover mb-3" />
-          <h1 className="text-2xl font-bold text-gray-900">KasaPlus</h1>
+          <img src="/Logom.jpg" alt="Cari Soft" className="w-16 h-16 rounded-xl object-cover mb-3" />
+          <h1 className="text-2xl font-bold text-gray-900">Cari Soft</h1>
           <div className="flex items-center gap-1.5 mt-1">
             <Shield size={14} className="text-amber-500" />
             <p className="text-sm text-gray-500">Lisans Aktivasyonu</p>

@@ -33,7 +33,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <img src="/Logom.jpg" alt="KasaPlus" className="w-9 h-9 rounded-xl object-cover shadow-lg group-hover:shadow-primary-500/40 transition-shadow" />
+            <img src="/Logom.jpg" alt="Cari Soft" className="w-9 h-9 rounded-xl object-cover shadow-lg group-hover:shadow-primary-500/40 transition-shadow" />
             <span className="text-xl font-bold text-slate-900">
               Kasa<span className="text-primary-600">Plus</span>
             </span>

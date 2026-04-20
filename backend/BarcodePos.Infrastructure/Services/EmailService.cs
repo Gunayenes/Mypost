@@ -27,8 +27,8 @@ public class EmailService : IEmailService
         _smtpPort = int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? _config["Smtp:Port"], out var p) ? p : 587;
         _smtpUser = Environment.GetEnvironmentVariable("SMTP_USER") ?? _config["Smtp:User"];
         _smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS") ?? _config["Smtp:Pass"];
-        _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? _config["Smtp:FromEmail"] ?? "noreply@kasaplus.com";
-        _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Smtp:FromName"] ?? "KasaPlus";
+        _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? _config["Smtp:FromEmail"] ?? "noreply@cari-soft.com";
+        _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Smtp:FromName"] ?? "Cari Soft";
         _baseUrl = Environment.GetEnvironmentVariable("APP_BASE_URL") ?? _config["AppBaseUrl"] ?? "http://localhost:5173";
     }
 
@@ -38,16 +38,16 @@ public class EmailService : IEmailService
     {
         var confirmUrl = $"{_baseUrl}/email-dogrula?token={confirmToken}";
 
-        var subject = "KasaPlus — E-posta Adresinizi Doğrulayın";
+        var subject = "Cari Soft — E-posta Adresinizi Doğrulayın";
         var body = $"""
             <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px;">
                 <div style="text-align: center; margin-bottom: 24px;">
-                    <h2 style="color: #1a1a2e; margin: 0;">KasaPlus</h2>
+                    <h2 style="color: #1a1a2e; margin: 0;">Cari Soft</h2>
                     <p style="color: #888; font-size: 14px;">Akıllı Satış Noktası</p>
                 </div>
                 <p style="font-size: 16px; color: #333;">Merhaba <strong>{fullName}</strong>,</p>
                 <p style="font-size: 14px; color: #555; line-height: 1.6;">
-                    KasaPlus'a kayıt olduğunuz için teşekkür ederiz. Hesabınızı aktifleştirmek için aşağıdaki butona tıklayın:
+                    Cari Soft'a kayıt olduğunuz için teşekkür ederiz. Hesabınızı aktifleştirmek için aşağıdaki butona tıklayın:
                 </p>
                 <div style="text-align: center; margin: 32px 0;">
                     <a href="{confirmUrl}" style="display: inline-block; padding: 12px 32px; background-color: #6c63ff; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
@@ -58,7 +58,7 @@ public class EmailService : IEmailService
                     Bu bağlantı 48 saat geçerlidir. Eğer bu kaydı siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.
                 </p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-                <p style="font-size: 11px; color: #bbb; text-align: center;">© KasaPlus — Akıllı Satış Noktası</p>
+                <p style="font-size: 11px; color: #bbb; text-align: center;">© Cari Soft — Akıllı Satış Noktası</p>
             </div>
             """;
 
@@ -69,11 +69,11 @@ public class EmailService : IEmailService
     {
         var resetUrl = $"{_baseUrl}/sifre-sifirla?token={resetToken}";
 
-        var subject = "KasaPlus — Şifre Sıfırlama Talebi";
+        var subject = "Cari Soft — Şifre Sıfırlama Talebi";
         var body = $"""
             <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px;">
                 <div style="text-align: center; margin-bottom: 24px;">
-                    <h2 style="color: #1a1a2e; margin: 0;">KasaPlus</h2>
+                    <h2 style="color: #1a1a2e; margin: 0;">Cari Soft</h2>
                     <p style="color: #888; font-size: 14px;">Akıllı Satış Noktası</p>
                 </div>
                 <p style="font-size: 16px; color: #333;">Merhaba <strong>{fullName}</strong>,</p>
@@ -89,7 +89,7 @@ public class EmailService : IEmailService
                     Bu bağlantı 1 saat geçerlidir. Eğer bu talebi siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz, hesabınız güvende.
                 </p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-                <p style="font-size: 11px; color: #bbb; text-align: center;">© KasaPlus — Akıllı Satış Noktası</p>
+                <p style="font-size: 11px; color: #bbb; text-align: center;">© Cari Soft — Akıllı Satış Noktası</p>
             </div>
             """;
 

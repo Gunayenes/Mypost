@@ -40,7 +40,7 @@ export default function SiteAdminLoginPage() {
             <Shield className="text-white" size={28} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Site Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">KasaPlus Yönetim Paneli</p>
+          <p className="text-sm text-gray-500 mt-1">Cari Soft Yönetim Paneli</p>
         </div>
 
         {error && (
@@ -57,7 +57,7 @@ export default function SiteAdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition"
-              placeholder="admin@kasaplus.com"
+              placeholder="admin@cari-soft.com"
               required
             />
           </div>

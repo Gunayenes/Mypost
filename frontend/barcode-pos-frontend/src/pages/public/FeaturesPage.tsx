@@ -85,7 +85,7 @@ export default function FeaturesPage() {
               İşletmenize güç katan <span className="text-primary-600">tüm özellikler</span>
             </h1>
             <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
-              KasaPlus, satış noktası yönetiminde ihtiyacınız olan her şeyi sunar.
+              Cari Soft, satış noktası yönetiminde ihtiyacınız olan her şeyi sunar.
             </p>
           </FadeIn>
 

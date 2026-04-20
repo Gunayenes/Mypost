@@ -46,7 +46,7 @@ function setupAutoUpdater() {
       });
     } else if (Notification.isSupported()) {
       new Notification({
-        title: 'KasaPlus Güncelleme',
+        title: 'Cari Soft Güncelleme',
         body: `Yeni sürüm mevcut: v${info.version}`,
       }).show();
     }

@@ -1,5 +1,5 @@
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  KasaPlus — Multi-stage Docker Build                       ║
+# ║  Cari Soft — Multi-stage Docker Build                       ║
 # ║  Frontend (React) + Backend (.NET 10) → Tek Container      ║
 # ╚══════════════════════════════════════════════════════════════╝
 

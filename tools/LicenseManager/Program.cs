@@ -134,7 +134,7 @@ app.MapDelete("/api/licenses/{id}", async (LicenseDbContext db, int id) =>
 
 Console.WriteLine();
 Console.WriteLine("  ╔═══════════════════════════════════════════╗");
-Console.WriteLine("  ║  KasaPlus Lisans Yönetim Paneli           ║");
+Console.WriteLine("  ║  Cari Soft Lisans Yönetim Paneli           ║");
 Console.WriteLine("  ║  http://localhost:5099                     ║");
 Console.WriteLine("  ╚═══════════════════════════════════════════╝");
 Console.WriteLine();
@@ -154,7 +154,7 @@ static class Html
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KasaPlus — Lisans Yönetim Paneli</title>
+<title>Cari Soft — Lisans Yönetim Paneli</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -170,7 +170,7 @@ static class Html
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-xl">🛡️</div>
       <div>
-        <h1 class="text-lg font-bold">KasaPlus — Lisans Yönetimi</h1>
+        <h1 class="text-lg font-bold">Cari Soft — Lisans Yönetimi</h1>
         <p class="text-xs text-gray-400">Müşteri ve lisans kontrol paneli</p>
       </div>
     </div>
@@ -446,7 +446,7 @@ function formatPhone(raw) {
 }
 
 function buildWhatsAppMsg(key) {
-  return `KasaPlus Lisans Anahtarınız:%0A%0A${encodeURIComponent(key)}%0A%0AUygulamada Ayarlar > Lisans Aktivasyonu bölümüne yapıştırın.`;
+  return `Cari Soft Lisans Anahtarınız:%0A%0A${encodeURIComponent(key)}%0A%0AUygulamada Ayarlar > Lisans Aktivasyonu bölümüne yapıştırın.`;
 }
 
 function sendWhatsApp(id) {

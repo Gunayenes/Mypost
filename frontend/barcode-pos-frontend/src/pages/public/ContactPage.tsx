@@ -6,7 +6,7 @@ const PHONE = '905427460197';
 
 const contactInfo = [
   { icon: Phone, label: 'Telefon', value: '+90 542 746 0197', href: 'tel:+905427460197' },
-  { icon: Mail, label: 'E-posta', value: 'destek@kasaplus.app', href: 'mailto:destek@kasaplus.app' },
+  { icon: Mail, label: 'E-posta', value: 'destek@carisoft.app', href: 'mailto:destek@carisoft.app' },
   { icon: MessageCircle, label: 'WhatsApp', value: 'WhatsApp ile yazın', href: `https://wa.me/${PHONE}` },
   { icon: MapPin, label: 'Konum', value: 'Türkiye', href: '#' },
 ];

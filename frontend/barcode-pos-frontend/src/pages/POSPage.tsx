@@ -281,7 +281,7 @@ export default function POSPage() {
 
   const printReceipt = () => {
     if (items.length === 0) { setError('Sepet boş.'); return; }
-    const storeName = storeSettings?.name || 'KasaPlus';
+    const storeName = storeSettings?.name || 'Cari Soft';
     const storePhone = storeSettings?.phone || '';
     const storeAddress = storeSettings?.address || '';
     const date = new Date();
@@ -344,7 +344,7 @@ export default function POSPage() {
       ${paidAmount > grandTotal ? `<div style="font-size:12px;"><b>Para Üstü: ${(paidAmount - grandTotal).toFixed(2)} ₺</b></div>` : ''}
       <div class="line"></div>
       <div class="center" style="font-size:10px;margin-top:6px;">Bizi tercih ettiğiniz için teşekkürler!</div>
-      <div class="center" style="font-size:9px;color:#888;margin-top:2px;">KasaPlus POS</div>
+      <div class="center" style="font-size:9px;color:#888;margin-top:2px;">Cari Soft POS</div>
     </body></html>`;
 
     const printWindow = window.open('', '_blank', 'width=350,height=600');

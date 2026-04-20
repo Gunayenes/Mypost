@@ -16,7 +16,7 @@
 **/*.db-journal
 **/logs/
 **/*.log
-**/KasaPlus-Setup/
+**/Cari Soft-Setup/
 **/LicenseManager-App/
 **/.env.local
 **/README.md

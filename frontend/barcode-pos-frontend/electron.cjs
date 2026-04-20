@@ -12,7 +12,7 @@ const isDev = !app.isPackaged;
 const API_PORT = 5050;
 const API_URL = `http://localhost:${API_PORT}`;
 const MAX_HEALTH_ATTEMPTS = 40;
-const APP_NAME = 'KasaPlus';
+const APP_NAME = 'Cari Soft';
 
 let backendProcess = null;
 let mainWindow = null;

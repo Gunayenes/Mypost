@@ -1,6 +1,6 @@
 {
-  "appId": "com.kasaplus.app",
-  "productName": "KasaPlus",
+  "appId": "com.carisoft.app",
+  "productName": "Cari Soft",
   "directories": {
     "output": "electron-dist"
   },
@@ -13,7 +13,7 @@
   ],
   "extraResources": [
     {
-      "from": "../../KasaPlus-Setup",
+      "from": "../../Cari Soft-Setup",
       "to": "backend",
       "filter": ["**/*", "!logs/**", "!*.log"]
     }
@@ -30,11 +30,11 @@
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
-    "shortcutName": "KasaPlus",
-    "menuCategory": "KasaPlus",
+    "shortcutName": "Cari Soft",
+    "menuCategory": "Cari Soft",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "uninstallDisplayName": "KasaPlus Satış Noktası"
+    "uninstallDisplayName": "Cari Soft Satış Noktası"
   },
   "compression": "normal",
   "publish": [

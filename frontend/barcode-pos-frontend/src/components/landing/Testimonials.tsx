@@ -5,7 +5,7 @@ const reviews = [
   {
     name: 'Ahmet Yılmaz',
     role: 'Market Sahibi',
-    text: 'KasaPlus sayesinde satışlarımı ve stoğumu çok daha kolay takip ediyorum. Barkod okuyucu ile satış yapmak inanılmaz hızlı.',
+    text: 'Cari Soft sayesinde satışlarımı ve stoğumu çok daha kolay takip ediyorum. Barkod okuyucu ile satış yapmak inanılmaz hızlı.',
     stars: 5,
   },
   {
@@ -17,7 +17,7 @@ const reviews = [
   {
     name: 'Mehmet Kaya',
     role: 'Elektronik Mağazası',
-    text: 'Daha önce birçok program denedim ama KasaPlus kadar kullanımı kolay olanı olmadı. Destek ekibi de çok ilgili.',
+    text: 'Daha önce birçok program denedim ama Cari Soft kadar kullanımı kolay olanı olmadı. Destek ekibi de çok ilgili.',
     stars: 5,
   },
 ];

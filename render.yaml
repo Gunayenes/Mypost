@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: kasaplus
+    name: carisoft
     runtime: docker
     dockerfilePath: ./Dockerfile
     region: frankfurt

@@ -1,4 +1,4 @@
-# KasaPlus — Barkodlu Satış Noktası Yönetim Sistemi
+# Cari Soft — Barkodlu Satış Noktası Yönetim Sistemi
 
 Küçük ve orta ölçekli işletmeler için geliştirilmiş, barkod okuyucu destekli modern POS (Point of Sale) sistemi. Masaüstü (Electron) ve web olarak çalışır.
 
@@ -129,7 +129,7 @@ npm run electron:dev
 ```powershell
 # 1. Backend publish + frontend build
 ./deploy.ps1
-# → KasaPlus-Setup/ klasörü oluşur
+# → Cari Soft-Setup/ klasörü oluşur
 
 # 2. Masaüstü installer (opsiyonel)
 ./deploy-desktop.ps1

@@ -20,7 +20,7 @@ function POSPreview() {
           <div className="flex-1 mx-3">
             <div className="w-52 h-5 bg-white rounded border border-slate-200 px-2 flex items-center">
               <svg className="w-2.5 h-2.5 text-slate-300 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span className="text-[8px] text-slate-400">kasaplus.app/pos</span>
+              <span className="text-[8px] text-slate-400">carisoft.app/pos</span>
             </div>
           </div>
         </div>
@@ -28,7 +28,7 @@ function POSPreview() {
         {/* POS Screenshot */}
         <img
           src="/pos-screenshot.png"
-          alt="KasaPlus POS Satış Ekranı"
+          alt="Cari Soft POS Satış Ekranı"
           className="w-full h-auto"
           loading="lazy"
         />

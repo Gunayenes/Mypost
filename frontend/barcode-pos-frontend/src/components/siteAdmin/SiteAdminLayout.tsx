@@ -71,7 +71,7 @@ export default function SiteAdminLayout() {
       {/* Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
-          <h2 className="text-sm font-medium text-gray-500">KasaPlus Site Yönetimi</h2>
+          <h2 className="text-sm font-medium text-gray-500">Cari Soft Site Yönetimi</h2>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Shield size={16} className="text-violet-500" />
             <span className="font-medium">Site Yöneticisi</span>
