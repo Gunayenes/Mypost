@@ -98,7 +98,7 @@ export default function LicenseGate({ children }: LicenseGateProps) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
         {/* Header */}
         <div className="flex flex-col items-center mb-6">
-          <img src="/carisoftlogo.png" alt="Cari Soft" className="w-16 h-16 rounded-xl object-cover mb-3" />
+          <img src="/carisoftlogo.png" alt="Cari Soft" className="h-20 w-auto object-contain mb-3" />
           <h1 className="text-2xl font-bold text-gray-900">Cari Soft</h1>
           <div className="flex items-center gap-1.5 mt-1">
             <Shield size={14} className="text-amber-500" />

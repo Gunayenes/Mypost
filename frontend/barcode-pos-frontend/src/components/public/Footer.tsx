@@ -34,11 +34,8 @@ export default function Footer() {
         <div className="py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <img src="/carisoftlogo.png" alt="Cari Soft" className="w-12 h-12 object-contain" />
-              <span className="text-xl font-bold text-white">
-                Cari<span className="text-primary-400">Soft</span>
-              </span>
+            <Link to="/" className="inline-block mb-4">
+              <img src="/carisoftlogo.png" alt="Cari Soft" className="h-14 w-auto object-contain brightness-0 invert" />
             </Link>
             <p className="text-sm leading-relaxed text-slate-400 max-w-xs">
               İşletmeniz için tasarlanmış akıllı satış noktası ve stok takip yazılımı.
