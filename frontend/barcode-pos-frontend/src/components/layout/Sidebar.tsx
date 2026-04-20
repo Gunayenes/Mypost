@@ -55,10 +55,10 @@ export default function Sidebar() {
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
         <div className="flex items-center gap-2 overflow-hidden">
           <img
-            src={getLogoUrl(settings?.logoPath) || '/Logom.jpg'}
+            src={getLogoUrl(settings?.logoPath) || '/carisoftlogo.png'}
             alt={settings?.name || 'Cari Soft'}
             className="w-8 h-8 rounded-md object-cover shrink-0"
-            onError={(e) => { (e.target as HTMLImageElement).src = '/Logom.jpg'; }}
+            onError={(e) => { (e.target as HTMLImageElement).src = '/carisoftlogo.png'; }}
           />
           {!collapsed && (
             <span className="text-lg font-bold tracking-tight truncate">

@@ -86,7 +86,7 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-violet-600 rounded-xl flex items-center justify-center mb-3 shadow-lg shadow-primary-600/25">
-            <img src="/Logom.jpg" alt="Cari Soft" className="w-full h-full rounded-xl object-cover" />
+            <img src="/carisoftlogo.png" alt="Cari Soft" className="w-full h-full rounded-xl object-cover" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Ücretsiz Deneyin</h1>
           <p className="text-sm text-gray-500 mt-1">14 gün ücretsiz, kredi kartı gerektirmez</p>

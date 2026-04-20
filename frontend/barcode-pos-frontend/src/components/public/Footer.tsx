@@ -35,7 +35,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <img src="/Logom.jpg" alt="Cari Soft" className="w-9 h-9 rounded-xl object-cover" />
+              <img src="/carisoftlogo.png" alt="Cari Soft" className="w-9 h-9 rounded-xl object-cover" />
               <span className="text-xl font-bold text-white">
                 Cari<span className="text-primary-400">Soft</span>
               </span>
