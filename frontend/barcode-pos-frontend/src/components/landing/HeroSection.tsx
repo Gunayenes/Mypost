@@ -27,7 +27,7 @@ function POSPreview() {
 
         {/* POS Screenshot */}
         <img
-          src="/pos-screenshot.png"
+          src="/slider.png"
           alt="Cari Soft POS Satış Ekranı"
           className="w-full h-auto"
           loading="lazy"
