@@ -361,23 +361,24 @@ export default function POSPage() {
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         {/* Barkod arama satırı */}
         <form onSubmit={handleFormSubmit} className="flex items-center gap-2 mb-3">
-          <div className="relative flex-1">
-            <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <div className="relative flex-1 min-w-0">
+            <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
             <input
               ref={inputRef}
               type="text"
               value={barcode}
               onChange={handleBarcodeChange}
-              placeholder="Ürün barkodunu okutunuz veya ürün adı yazınız..."
+              placeholder="Barkod veya ürün adı..."
               className="w-full pl-10 pr-4 py-3 border-2 border-blue-400 rounded-lg focus:border-blue-600 outline-none text-base font-medium"
               autoComplete="off"
             />
           </div>
-          <button type="submit" className="flex items-center gap-1.5 px-5 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition">
-            <Search size={18} /> Ara
+          <button type="submit" title="Ara" className="flex items-center justify-center gap-1.5 px-3 xl:px-5 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition shrink-0">
+            <Search size={18} /> <span className="hidden xl:inline">Ara</span>
           </button>
           <button
             type="button"
+            title="Fiyat Gör"
             onClick={async () => {
               if (!barcode.trim()) { setError('Barkod giriniz.'); return; }
               try {
@@ -388,16 +389,17 @@ export default function POSPage() {
                 } else { setError('Ürün bulunamadı.'); }
               } catch { setError('Ürün bulunamadı.'); }
             }}
-            className="flex items-center gap-1.5 px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition"
+            className="flex items-center justify-center gap-1.5 px-3 xl:px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition shrink-0"
           >
-            <Tag size={18} /> Fiyat Gör
+            <Tag size={18} /> <span className="hidden xl:inline">Fiyat Gör</span>
           </button>
           <button
             type="button"
+            title="Yazdır"
             onClick={printReceipt}
-            className="flex items-center gap-1.5 px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition"
+            className="flex items-center justify-center gap-1.5 px-3 xl:px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition shrink-0"
           >
-            <Printer size={18} /> Yazdır
+            <Printer size={18} /> <span className="hidden xl:inline">Yazdır</span>
           </button>
         </form>
 
@@ -569,7 +571,7 @@ export default function POSPage() {
         </div>
 
         {/* ─── SAĞ PANEL: Ödeme ─── */}
-        <div className="w-80 border-l border-gray-200 bg-white flex flex-col shrink-0">
+        <div className="w-64 xl:w-72 2xl:w-80 border-l border-gray-200 bg-white flex flex-col shrink-0">
           {/* Tarih/Saat */}
           <div className="px-3 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
             <Clock size={16} />
@@ -610,54 +612,54 @@ export default function POSPage() {
 
           {/* Ödeme tipi butonları */}
           <div className="px-3 py-3 border-b border-gray-200 space-y-2">
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 2xl:grid-cols-4 gap-1.5">
               <button
                 onClick={() => setPaymentType('Nakit')}
-                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Nakit'
                     ? 'border-green-500 bg-green-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
                 }`}
               >
-                <Banknote size={20} />
+                <Banknote size={18} />
                 <span>NAKİT</span>
-                <span className="text-[10px] font-normal opacity-70">F8</span>
+                <span className="text-[9px] font-normal opacity-70">F8</span>
               </button>
               <button
                 onClick={() => setPaymentType('Kart')}
-                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Kart'
                     ? 'border-blue-500 bg-blue-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
                 }`}
               >
-                <CreditCard size={20} />
+                <CreditCard size={18} />
                 <span>POS</span>
-                <span className="text-[10px] font-normal opacity-70">F9</span>
+                <span className="text-[9px] font-normal opacity-70">F9</span>
               </button>
               <button
                 onClick={() => setPaymentType('Veresiye')}
-                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Veresiye'
                     ? 'border-orange-500 bg-orange-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50'
                 }`}
               >
-                <Wallet size={20} />
+                <Wallet size={18} />
                 <span>VERESİYE</span>
-                <span className="text-[10px] font-normal opacity-70">F10</span>
+                <span className="text-[9px] font-normal opacity-70">F10</span>
               </button>
               <button
                 onClick={() => { setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }}
-                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Parcali'
                     ? 'border-purple-500 bg-purple-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50'
                 }`}
               >
-                <Split size={20} />
+                <Split size={18} />
                 <span>PARÇALI</span>
-                <span className="text-[10px] font-normal opacity-70">F11</span>
+                <span className="text-[9px] font-normal opacity-70">F11</span>
               </button>
             </div>
 
