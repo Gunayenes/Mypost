@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSiteAdminAuthStore } from '@/store/siteAdminAuthStore';
 import AppLayout from '@/components/layout/AppLayout';
 import ToastContainer from '@/components/ui/ToastContainer';
+import EnvironmentBanner from '@/components/EnvironmentBanner';
 import LicenseGate from '@/components/LicenseGate';
 import SubscriptionGate from '@/components/SubscriptionGate';
 import { isElectron } from '@/utils/platform';
@@ -171,6 +172,7 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<Spinner />}>
         <ToastContainer />
+        <EnvironmentBanner />
         <SubscriptionGate>
           {electron ? posRoutes : webRoutes}
         </SubscriptionGate>

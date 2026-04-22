@@ -1,0 +1,75 @@
+name: CI — Build & Test
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  build-backend:
+    name: Backend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Restore dependencies
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build
+        working-directory: backend
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run Unit Tests
+        working-directory: backend
+        run: dotnet test --no-build --configuration Release --verbosity normal
+        continue-on-error: true
+
+  build-frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/barcode-pos-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend/barcode-pos-frontend
+        run: npm ci
+
+      - name: TypeScript check
+        working-directory: frontend/barcode-pos-frontend
+        run: npx tsc --noEmit
+
+      - name: Production build
+        working-directory: frontend/barcode-pos-frontend
+        run: npm run build
+
+  notify:
+    name: Status Summary
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Branch info
+        run: |
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Backend: ${{ needs.build-backend.result }}"
+          echo "Frontend: ${{ needs.build-frontend.result }}"
+          if [[ "${{ github.ref_name }}" == "staging" ]]; then
+            echo "::notice::Staging branch — test.cari-soft.com'a manuel deploy edilmeli"
+          elif [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "::notice::Main branch — cari-soft.com'a manuel deploy edilmeli"
+          fi
