@@ -172,13 +172,25 @@ try
         licenseDb.Database.EnsureCreated();
     }
 
-    // ── Otomatik Migration (--migrate argümanı veya Production ilk çalıştırma) ──
+    // ── Otomatik DB kurulumu (Provider'a göre Migrate vs EnsureCreated) ──
     if (args.Contains("--migrate") || !app.Environment.IsDevelopment())
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<BarcodePos.Infrastructure.Persistence.AppDbContext>();
-        db.Database.Migrate();
-        Log.Information("Veritabanı migration uygulandı.");
+        var providerName = db.Database.ProviderName ?? "";
+
+        // SQLite migration'ları TEXT column tipiyle üretildi, SQL Server/PostgreSQL'de cast hatası verir.
+        // Bu yüzden MSSQL/Postgres için EnsureCreated (fluent config'ten schema oluştur).
+        if (providerName.Contains("Sqlite"))
+        {
+            db.Database.Migrate();
+            Log.Information("SQLite migration'ları uygulandı.");
+        }
+        else
+        {
+            db.Database.EnsureCreated();
+            Log.Information("DB schema oluşturuldu (EnsureCreated). Provider: {Provider}", providerName);
+        }
 
         if (args.Contains("--migrate"))
         {
