@@ -28,6 +28,12 @@ Thumbs.db
 
 # Build / Deploy çıktıları
 BarcodePos-Setup/
+Cari Soft-Setup/
+Cari-Soft-Setup/
+CariSoft-Staging/
+
+# Web.config (şifreler içerebilir)
+**/web.config
 LicenseManager-App/
 frontend/barcode-pos-frontend/electron-dist/
 backend/BarcodePos.API/wwwroot/

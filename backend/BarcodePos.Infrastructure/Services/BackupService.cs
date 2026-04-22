@@ -33,7 +33,10 @@ public partial class BackupService : IBackupService
         _logger = logger;
 
         var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "Data Source=BarcodePos.db";
-        _isSqlite = !connectionString.Contains("Host=") && !connectionString.Contains("Server=");
+        // SQLite: Host=/Server=/Initial Catalog= yoksa, ve .db uzantılı dosya ise
+        _isSqlite = !connectionString.Contains("Host=", System.StringComparison.OrdinalIgnoreCase)
+                 && !connectionString.Contains("Server=", System.StringComparison.OrdinalIgnoreCase)
+                 && !connectionString.Contains("Initial Catalog=", System.StringComparison.OrdinalIgnoreCase);
 
         if (_isSqlite)
         {

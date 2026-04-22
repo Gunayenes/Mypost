@@ -16,20 +16,25 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // EF Core — PostgreSQL (cloud) veya SQLite (local/Electron)
+        // EF Core — DbProvider: SqlServer (MSSQL) | Postgres | Sqlite (otomatik algıla)
         var connectionString = configuration.GetConnectionString("DefaultConnection") ?? "";
-        if (connectionString.Contains("Host=") || connectionString.Contains("Server="))
+        var provider = DetectDbProvider(connectionString, configuration);
+
+        services.AddDbContext<AppDbContext>(options =>
         {
-            // PostgreSQL
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(connectionString));
-        }
-        else
-        {
-            // SQLite (local/Electron)
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite(connectionString));
-        }
+            switch (provider)
+            {
+                case "SqlServer":
+                    options.UseSqlServer(connectionString);
+                    break;
+                case "Postgres":
+                    options.UseNpgsql(connectionString);
+                    break;
+                default:
+                    options.UseSqlite(connectionString);
+                    break;
+            }
+        });
 
         // EF Core — License DB (LicenseManager ile paylaşılır)
         var licenseConnection = configuration.GetConnectionString("LicenseConnection") ?? "Data Source=licenses.db";
@@ -81,5 +86,34 @@ public static class DependencyInjection
         services.AddSingleton<IEmailService, EmailService>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Connection string'e göre DB provider'ı algılar.
+    /// Override: appsettings.json -> "DbProvider": "SqlServer" | "Postgres" | "Sqlite"
+    /// </summary>
+    private static string DetectDbProvider(string connectionString, IConfiguration configuration)
+    {
+        // Manuel override (appsettings veya env var)
+        var explicitProvider = configuration["DbProvider"];
+        if (!string.IsNullOrEmpty(explicitProvider)) return explicitProvider;
+
+        if (string.IsNullOrEmpty(connectionString)) return "Sqlite";
+
+        // PostgreSQL: Host= + Username= (User Id değil)
+        if (connectionString.Contains("Host=", System.StringComparison.OrdinalIgnoreCase)
+            && connectionString.Contains("Username=", System.StringComparison.OrdinalIgnoreCase))
+            return "Postgres";
+
+        // SQL Server: Server= veya Data Source=... (ve User Id= veya Integrated Security)
+        if (connectionString.Contains("Server=", System.StringComparison.OrdinalIgnoreCase)
+            || connectionString.Contains("Initial Catalog=", System.StringComparison.OrdinalIgnoreCase))
+            return "SqlServer";
+
+        // Data Source=dosya.db ise SQLite
+        if (connectionString.Contains(".db", System.StringComparison.OrdinalIgnoreCase))
+            return "Sqlite";
+
+        return "Sqlite";
     }
 }
