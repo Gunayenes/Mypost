@@ -34,6 +34,8 @@ public static class DependencyInjection
                     options.UseSqlite(connectionString);
                     break;
             }
+            // Provider değişikliklerinde pending model changes warning'i bastır
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
         // EF Core — License DB (LicenseManager ile paylaşılır)

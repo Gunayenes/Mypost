@@ -11,8 +11,8 @@ public class CustomerTransactionConfiguration : IEntityTypeConfiguration<Custome
         builder.ToTable("CustomerTransactions");
 
         builder.HasKey(ct => ct.Id);
-        builder.Property(ct => ct.Amount).HasColumnType("TEXT");
-        builder.Property(ct => ct.BalanceAfter).HasColumnType("TEXT");
+        builder.Property(ct => ct.Amount).HasPrecision(18, 2);
+        builder.Property(ct => ct.BalanceAfter).HasPrecision(18, 2);
         builder.Property(ct => ct.Type).HasConversion<int>();
         builder.Property(ct => ct.Note).HasMaxLength(500);
 

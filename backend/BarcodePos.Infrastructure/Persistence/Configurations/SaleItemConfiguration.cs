@@ -13,11 +13,11 @@ public class SaleItemConfiguration : IEntityTypeConfiguration<SaleItem>
         builder.HasKey(si => si.Id);
         builder.Property(si => si.ProductName).IsRequired().HasMaxLength(200);
         builder.Property(si => si.Barcode).HasMaxLength(50);
-        builder.Property(si => si.UnitPrice).HasColumnType("TEXT");
-        builder.Property(si => si.CostPrice).HasColumnType("TEXT");
-        builder.Property(si => si.TaxRate).HasColumnType("TEXT");
-        builder.Property(si => si.DiscountAmount).HasColumnType("TEXT");
-        builder.Property(si => si.LineTotal).HasColumnType("TEXT");
+        builder.Property(si => si.UnitPrice).HasPrecision(18, 2);
+        builder.Property(si => si.CostPrice).HasPrecision(18, 2);
+        builder.Property(si => si.TaxRate).HasPrecision(18, 2);
+        builder.Property(si => si.DiscountAmount).HasPrecision(18, 2);
+        builder.Property(si => si.LineTotal).HasPrecision(18, 2);
 
         builder.HasOne(si => si.Sale)
             .WithMany(s => s.Items)

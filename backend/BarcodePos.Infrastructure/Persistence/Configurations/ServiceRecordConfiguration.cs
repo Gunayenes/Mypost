@@ -21,10 +21,10 @@ public class ServiceRecordConfiguration : IEntityTypeConfiguration<ServiceRecord
         builder.Property(s => s.FaultDescription).IsRequired().HasMaxLength(2000);
         builder.Property(s => s.CustomerNote).HasMaxLength(1000);
 
-        builder.Property(s => s.LaborCost).HasColumnType("TEXT");
-        builder.Property(s => s.PartsCost).HasColumnType("TEXT");
-        builder.Property(s => s.TotalCost).HasColumnType("TEXT");
-        builder.Property(s => s.PaidAmount).HasColumnType("TEXT");
+        builder.Property(s => s.LaborCost).HasPrecision(18, 2);
+        builder.Property(s => s.PartsCost).HasPrecision(18, 2);
+        builder.Property(s => s.TotalCost).HasPrecision(18, 2);
+        builder.Property(s => s.PaidAmount).HasPrecision(18, 2);
 
         builder.Property(s => s.Status).HasConversion<int>();
         builder.Property(s => s.Priority).HasConversion<int>();

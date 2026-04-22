@@ -14,12 +14,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Barcode).IsRequired().HasMaxLength(50);
         builder.Property(p => p.Name).IsRequired().HasMaxLength(200);
         builder.Property(p => p.Description).HasMaxLength(500);
-        builder.Property(p => p.CostPrice).HasColumnType("TEXT");
-        builder.Property(p => p.SalePrice).HasColumnType("TEXT");
-        builder.Property(p => p.CostPriceUsd).HasColumnType("TEXT");
-        builder.Property(p => p.SalePriceUsd).HasColumnType("TEXT");
-        builder.Property(p => p.ExchangeRate).HasColumnType("TEXT");
-        builder.Property(p => p.TaxRate).HasColumnType("TEXT");
+        builder.Property(p => p.CostPrice).HasPrecision(18, 2);
+        builder.Property(p => p.SalePrice).HasPrecision(18, 2);
+        builder.Property(p => p.CostPriceUsd).HasPrecision(18, 2);
+        builder.Property(p => p.SalePriceUsd).HasPrecision(18, 2);
+        builder.Property(p => p.ExchangeRate).HasPrecision(18, 2);
+        builder.Property(p => p.TaxRate).HasPrecision(18, 2);
 
         // Barkod maÄŸaza bazÄ±nda benzersiz
         builder.HasIndex(p => new { p.StoreId, p.Barcode }).IsUnique();

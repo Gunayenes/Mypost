@@ -15,7 +15,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(c => c.Phone).HasMaxLength(20);
         builder.Property(c => c.Email).HasMaxLength(200);
         builder.Property(c => c.Address).HasMaxLength(500);
-        builder.Property(c => c.Balance).HasColumnType("TEXT").HasDefaultValue(0m);
+        builder.Property(c => c.Balance).HasPrecision(18, 2).HasDefaultValue(0m);
 
         builder.HasOne(c => c.Store)
             .WithMany(s => s.Customers)

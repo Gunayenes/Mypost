@@ -12,8 +12,8 @@ public class ServicePartConfiguration : IEntityTypeConfiguration<ServicePart>
 
         builder.HasKey(p => p.Id);
         builder.Property(p => p.PartName).IsRequired().HasMaxLength(200);
-        builder.Property(p => p.UnitCost).HasColumnType("TEXT");
-        builder.Property(p => p.TotalCost).HasColumnType("TEXT");
+        builder.Property(p => p.UnitCost).HasPrecision(18, 2);
+        builder.Property(p => p.TotalCost).HasPrecision(18, 2);
 
         builder.HasIndex(p => p.ServiceRecordId);
 

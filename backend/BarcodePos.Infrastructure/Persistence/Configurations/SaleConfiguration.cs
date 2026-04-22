@@ -12,10 +12,12 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
 
         builder.HasKey(s => s.Id);
         builder.Property(s => s.ReceiptNumber).IsRequired().HasMaxLength(50);
-        builder.Property(s => s.SubTotal).HasColumnType("TEXT");
-        builder.Property(s => s.TaxTotal).HasColumnType("TEXT");
-        builder.Property(s => s.DiscountTotal).HasColumnType("TEXT");
-        builder.Property(s => s.GrandTotal).HasColumnType("TEXT");
+        builder.Property(s => s.SubTotal).HasPrecision(18, 2);
+        builder.Property(s => s.TaxTotal).HasPrecision(18, 2);
+        builder.Property(s => s.DiscountTotal).HasPrecision(18, 2);
+        builder.Property(s => s.GrandTotal).HasPrecision(18, 2);
+        builder.Property(s => s.PaidCash).HasPrecision(18, 2);
+        builder.Property(s => s.PaidCard).HasPrecision(18, 2);
         builder.Property(s => s.PaymentType).HasConversion<int>();
         builder.Property(s => s.Status).HasConversion<int>();
 
