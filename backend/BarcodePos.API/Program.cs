@@ -192,6 +192,19 @@ try
             Log.Information("DB schema oluşturuldu (EnsureCreated). Provider: {Provider}", providerName);
         }
 
+        // Özel SQL migration'ları (DbMigrations/*.sql) çalıştır — her deploy'da yeni dosyalar uygulanır
+        var migrationsDir = Path.Combine(AppContext.BaseDirectory, "DbMigrations");
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        try
+        {
+            BarcodePos.Infrastructure.Persistence.CustomMigrationRunner
+                .RunAsync(db, migrationsDir, logger).GetAwaiter().GetResult();
+        }
+        catch (Exception mex)
+        {
+            Log.Error(mex, "Özel SQL migration'ları uygulanırken hata oluştu. Uygulama devam ediyor.");
+        }
+
         if (args.Contains("--migrate"))
         {
             Log.Information("Migration tamamlandı. Uygulama kapatılıyor.");

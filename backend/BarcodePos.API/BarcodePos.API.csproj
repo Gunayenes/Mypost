@@ -17,4 +17,12 @@
     <ProjectReference Include="..\BarcodePos.Infrastructure\BarcodePos.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- DbMigrations klasörü publish'e dahil et -->
+  <ItemGroup>
+    <Content Include="DbMigrations\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
