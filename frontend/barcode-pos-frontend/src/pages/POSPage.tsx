@@ -404,22 +404,22 @@ export default function POSPage() {
         </form>
 
         {/* Ödenen / Tutar / Para Üstü göstergeleri */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="border-2 border-gray-300 rounded-lg p-3">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ödenen</span>
-            <p className="text-3xl font-black text-gray-900 tabular-nums">
+        <div className="grid grid-cols-3 gap-2 xl:gap-3">
+          <div className="border-2 border-gray-300 rounded-lg p-2 xl:p-3">
+            <span className="text-[10px] xl:text-xs font-semibold text-gray-500 uppercase tracking-wide">Ödenen</span>
+            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-gray-900 tabular-nums">
               ₺{paidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="border-2 border-red-300 rounded-lg p-3 bg-red-50/50">
-            <span className="text-xs font-semibold text-red-500 uppercase tracking-wide">Tutar</span>
-            <p className="text-3xl font-black text-red-600 tabular-nums">
+          <div className="border-2 border-red-300 rounded-lg p-2 xl:p-3 bg-red-50/50">
+            <span className="text-[10px] xl:text-xs font-semibold text-red-500 uppercase tracking-wide">Tutar</span>
+            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-red-600 tabular-nums">
               ₺{grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="border-2 border-gray-300 rounded-lg p-3">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Para Üstü</span>
-            <p className="text-3xl font-black text-gray-900 tabular-nums">
+          <div className="border-2 border-gray-300 rounded-lg p-2 xl:p-3">
+            <span className="text-[10px] xl:text-xs font-semibold text-gray-500 uppercase tracking-wide">Para Üstü</span>
+            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-gray-900 tabular-nums">
               ₺{getChange().toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </p>
           </div>

@@ -36,13 +36,25 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  // Küçük laptoplarda (<1400px) varsayılan collapsed
+  const [collapsed, setCollapsed] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 1400 : false
+  );
   const prefix = isElectron() ? '' : '/app';
   const location = useLocation();
   const { settings, fetch: fetchSettings } = useStoreSettings();
 
   // İlk yüklemede store settings'i çek
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  // Ekran yeniden boyutlanırsa sidebar'ı ona göre ayarla
+  useEffect(() => {
+    const handler = () => {
+      if (window.innerWidth < 1400 && !collapsed) setCollapsed(true);
+    };
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, [collapsed]);
 
   return (
     <aside
