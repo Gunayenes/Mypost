@@ -50,6 +50,7 @@ const SiteAdminSubscriptionsPage = lazy(() => import('@/pages/siteAdmin/SiteAdmi
 const SiteAdminLicensesPage = lazy(() => import('@/pages/siteAdmin/SiteAdminLicensesPage'));
 const SiteAdminCustomerDetailPage = lazy(() => import('@/pages/siteAdmin/SiteAdminCustomerDetailPage'));
 const SiteAdminSettingsPage = lazy(() => import('@/pages/siteAdmin/SiteAdminSettingsPage'));
+const SiteAdminMessagesPage = lazy(() => import('@/pages/siteAdmin/SiteAdminMessagesPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -161,6 +162,7 @@ export default function App() {
         <Route path="customers/:id" element={<SiteAdminCustomerDetailPage />} />
         <Route path="subscriptions" element={<SiteAdminSubscriptionsPage />} />
         <Route path="licenses" element={<SiteAdminLicensesPage />} />
+        <Route path="messages" element={<SiteAdminMessagesPage />} />
         <Route path="settings" element={<SiteAdminSettingsPage />} />
       </Route>
 

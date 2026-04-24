@@ -33,25 +33,6 @@ const plans: Plan[] = [
     href: '/kayit',
   },
   {
-    name: 'Profesyonel',
-    price: '699₺',
-    period: '/ay',
-    desc: 'Büyüyen işletmeler için',
-    popular: true,
-    features: [
-      { text: 'Sınırsız ürün', included: true },
-      { text: '1 kullanıcı', included: true },
-      { text: 'Barkodlu hızlı satış', included: true },
-      { text: 'Gerçek zamanlı stok takibi', included: true },
-      { text: 'Tüm raporlar + Excel dışa aktarma', included: true },
-      { text: 'Otomatik yedekleme', included: true },
-      { text: 'Servis takip modülü', included: true },
-      { text: 'E-posta destek', included: true },
-    ],
-    cta: 'Hemen Başla',
-    href: '/kayit?plan=pro',
-  },
-  {
     name: 'Kurumsal',
     price: 'İletişim',
     period: '',
@@ -89,7 +70,7 @@ export default function PricingCards() {
           </div>
         </FadeIn>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           {plans.map((p, i) => (
             <FadeIn key={p.name} delay={i * 0.1}>
               <div

@@ -107,4 +107,35 @@ export const siteAdminApi = {
 
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     siteApi.post<ApiResult<void>>('/site-admin/change-password', data),
+
+  // ── İletişim Mesajları ──
+  getContactMessages: (params?: { unreadOnly?: boolean; page?: number; pageSize?: number }) =>
+    siteApi.get<ApiResult<{
+      items: Array<{
+        id: number;
+        fullName: string;
+        email: string;
+        phone?: string;
+        businessName?: string;
+        subject: string;
+        message: string;
+        isRead: boolean;
+        readAt?: string;
+        createdAt: string;
+      }>;
+      totalCount: number;
+      totalPages: number;
+      page: number;
+      hasPreviousPage: boolean;
+      hasNextPage: boolean;
+    }>>('/contact', { params }),
+
+  markContactRead: (id: number) =>
+    siteApi.patch<ApiResult<void>>(`/contact/${id}/mark-read`),
+
+  deleteContactMessage: (id: number) =>
+    siteApi.delete<ApiResult<void>>(`/contact/${id}`),
+
+  getUnreadContactCount: () =>
+    siteApi.get<ApiResult<number>>('/contact/unread-count'),
 };

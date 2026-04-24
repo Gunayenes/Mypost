@@ -1,22 +1,52 @@
 import { useState } from 'react';
-import { MapPin, Phone, Mail, MessageCircle, Send } from 'lucide-react';
+import axios from 'axios';
+import { MapPin, Phone, Mail, MessageCircle, Send, Loader2 } from 'lucide-react';
 import FadeIn from '@/components/common/FadeIn';
 
 const PHONE = '905427460197';
 
 const contactInfo = [
   { icon: Phone, label: 'Telefon', value: '+90 542 746 0197', href: 'tel:+905427460197' },
-  { icon: Mail, label: 'E-posta', value: 'destek@carisoft.app', href: 'mailto:destek@carisoft.app' },
+  { icon: Mail, label: 'E-posta', value: 'destek@cari-soft.com', href: 'mailto:destek@cari-soft.com' },
   { icon: MessageCircle, label: 'WhatsApp', value: 'WhatsApp ile yazın', href: `https://wa.me/${PHONE}` },
   { icon: MapPin, label: 'Konum', value: 'Türkiye', href: '#' },
 ];
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    businessName: '',
+    subject: '',
+    message: '',
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setError('');
+    setLoading(true);
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const { data: res } = await axios.post(`${baseUrl}/contact`, form);
+      if (res.success) {
+        setSent(true);
+      } else {
+        setError(res.message || 'Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || 'Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,49 +102,102 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Ad Soyad</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Ad Soyad *</label>
                       <input
                         type="text"
+                        name="fullName"
+                        value={form.fullName}
+                        onChange={handleChange}
                         required
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
                         placeholder="Adınız Soyadınız"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">E-posta</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">E-posta *</label>
                       <input
                         type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
                         required
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
                         placeholder="ornek@mail.com"
                       />
                     </div>
                   </div>
+
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Telefon</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
+                        placeholder="05XX XXX XX XX"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">İşletme</label>
+                      <input
+                        type="text"
+                        name="businessName"
+                        value={form.businessName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
+                        placeholder="İşletme adı (opsiyonel)"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Konu</label>
                     <input
                       type="text"
-                      required
+                      name="subject"
+                      value={form.subject}
+                      onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
                       placeholder="Konu başlığı"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Mesaj</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Mesaj *</label>
                     <textarea
+                      name="message"
+                      value={form.message}
+                      onChange={handleChange}
                       required
                       rows={5}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all resize-none"
                       placeholder="Mesajınızı yazın..."
                     />
                   </div>
+
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-primary-600 text-white rounded-xl font-semibold text-sm hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/25"
+                    disabled={loading}
+                    className="w-full py-3.5 bg-primary-600 text-white rounded-xl font-semibold text-sm hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/25 disabled:opacity-60 flex items-center justify-center gap-2"
                   >
-                    Gönder
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Gönderiliyor...
+                      </>
+                    ) : (
+                      'Gönder'
+                    )}
                   </button>
                 </form>
               )}

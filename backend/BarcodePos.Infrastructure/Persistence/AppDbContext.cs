@@ -33,6 +33,7 @@ public class AppDbContext : DbContext
     public DbSet<WebCustomer> WebCustomers => Set<WebCustomer>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
