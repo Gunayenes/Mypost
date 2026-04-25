@@ -165,11 +165,21 @@ try
 
     var app = builder.Build();
 
-    // ── License DB — her zaman EnsureCreated (migration kullanmaz) ──
+    // ── License DB — sadece Electron/lokal kurulumlarda gerekli ──
+    // Cloud/Plesk ortamında DISABLE_LICENSE_CHECK=true ise atla
+    var disableLicense = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISABLE_LICENSE_CHECK"));
+    if (!disableLicense)
     {
-        using var initScope = app.Services.CreateScope();
-        var licenseDb = initScope.ServiceProvider.GetRequiredService<BarcodePos.Infrastructure.Persistence.LicenseDbContext>();
-        licenseDb.Database.EnsureCreated();
+        try
+        {
+            using var initScope = app.Services.CreateScope();
+            var licenseDb = initScope.ServiceProvider.GetRequiredService<BarcodePos.Infrastructure.Persistence.LicenseDbContext>();
+            licenseDb.Database.EnsureCreated();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning("License DB başlatılamadı (web ortamında normal): {Message}", ex.Message);
+        }
     }
 
     // ── Otomatik DB kurulumu (Provider'a göre Migrate vs EnsureCreated) ──
