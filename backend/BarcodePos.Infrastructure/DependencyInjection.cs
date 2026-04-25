@@ -87,6 +87,9 @@ public static class DependencyInjection
         // E-posta servisi
         services.AddSingleton<IEmailService, EmailService>();
 
+        // Döviz kuru servisi (USD/TRY otomatik güncelleme)
+        services.AddSingleton<IExchangeRateService, ExchangeRateService>();
+
         return services;
     }
 

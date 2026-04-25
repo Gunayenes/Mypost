@@ -17,4 +17,13 @@ public interface IProductService
     Task<Result<BulkImportResultDto>> BulkImportAsync(Stream excelStream, int storeId);
     Task<byte[]> GetImportTemplateAsync();
     Task<byte[]> ExportToExcelAsync(int storeId);
+    /// <summary>USD'li tüm ürünlerin TL fiyatlarını güncel kura göre yeniden hesaplar ve kaydeder.</summary>
+    Task<Result<BulkUsdUpdateResult>> BulkUpdateUsdPricesAsync(int storeId);
+}
+
+public class BulkUsdUpdateResult
+{
+    public int UpdatedCount { get; set; }
+    public decimal NewExchangeRate { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

@@ -13,6 +13,12 @@ public class ProductDto
     public decimal? CostPriceUsd { get; set; }
     public decimal? SalePriceUsd { get; set; }
     public decimal? ExchangeRate { get; set; }
+    /// <summary>USD'li ürünlerde günlük güncel kurla anlık hesaplanmış TL fiyat.</summary>
+    public decimal? CurrentSalePrice { get; set; }
+    /// <summary>USD'li ürünlerde günlük güncel kurla anlık hesaplanmış TL alış.</summary>
+    public decimal? CurrentCostPrice { get; set; }
+    /// <summary>Anlık fiyat hesaplanırken kullanılan güncel kur.</summary>
+    public decimal? CurrentExchangeRate { get; set; }
     public decimal TaxRate { get; set; }
     public int StockQuantity { get; set; }
     public int MinStockLevel { get; set; }

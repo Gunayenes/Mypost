@@ -67,8 +67,9 @@ export const useCartStore = create<CartState>((set, get) => ({
             productId: product.id,
             barcode: product.barcode,
             name: product.name,
-            unitPrice: product.salePrice,
-            costPrice: product.costPrice,
+            // USD'li ürünse güncel kurla hesaplanmış fiyat kullan, yoksa kayıtlı TL fiyat
+            unitPrice: product.currentSalePrice ?? product.salePrice,
+            costPrice: product.currentCostPrice ?? product.costPrice,
             taxRate: product.taxRate,
             quantity: 1,
             discountAmount: 0,

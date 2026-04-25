@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <rect width="40" height="40" rx="10" fill="url(#g)"/>
+  <text x="50%" y="54%" dominant-baseline="central" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="20" fill="white">K</text>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="40" y2="40">
+      <stop stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+  </defs>
+</svg>

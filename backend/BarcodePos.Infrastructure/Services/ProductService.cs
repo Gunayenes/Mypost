@@ -11,10 +11,37 @@ namespace BarcodePos.Infrastructure.Services;
 public class ProductService : IProductService
 {
     private readonly AppDbContext _context;
+    private readonly IExchangeRateService _exchangeRateService;
 
-    public ProductService(AppDbContext context)
+    public ProductService(AppDbContext context, IExchangeRateService exchangeRateService)
     {
         _context = context;
+        _exchangeRateService = exchangeRateService;
+    }
+
+    /// <summary>
+    /// USD'li ürünlerde anlık güncel kurla TL fiyatları hesaplar.
+    /// </summary>
+    private void ApplyCurrentRate(ProductDto dto, decimal currentRate)
+    {
+        if (dto.SalePriceUsd is > 0 && currentRate > 0)
+        {
+            dto.CurrentExchangeRate = currentRate;
+            dto.CurrentSalePrice = Math.Round(dto.SalePriceUsd.Value * currentRate, 2);
+            if (dto.CostPriceUsd is > 0)
+                dto.CurrentCostPrice = Math.Round(dto.CostPriceUsd.Value * currentRate, 2);
+        }
+    }
+
+    /// <summary>
+    /// Birden fazla DTO için tek seferde kur uygulanır.
+    /// </summary>
+    private async Task ApplyCurrentRateToAllAsync(IEnumerable<ProductDto> dtos)
+    {
+        if (!dtos.Any(d => d.SalePriceUsd is > 0)) return;
+        var rate = await _exchangeRateService.GetUsdTryRateAsync();
+        if (rate <= 0) return;
+        foreach (var dto in dtos) ApplyCurrentRate(dto, rate);
     }
 
     public async Task<Result<PagedResult<ProductDto>>> GetAllAsync(ProductListFilter filter, int storeId)
@@ -50,6 +77,8 @@ public class ProductService : IProductService
             .Select(p => MapToDto(p))
             .ToListAsync();
 
+        await ApplyCurrentRateToAllAsync(items);
+
         return Result<PagedResult<ProductDto>>.Ok(
             PagedResult<ProductDto>.Create(items, totalCount, filter.Page, filter.PageSize));
     }
@@ -64,7 +93,9 @@ public class ProductService : IProductService
         if (product is null)
             return Result<ProductDto>.Fail("Ürün bulunamadı.");
 
-        return Result<ProductDto>.Ok(MapToDto(product));
+        var dto = MapToDto(product);
+        await ApplyCurrentRateToAllAsync([dto]);
+        return Result<ProductDto>.Ok(dto);
     }
 
     public async Task<Result<ProductDto>> GetByBarcodeAsync(string barcode, int storeId)
@@ -78,7 +109,9 @@ public class ProductService : IProductService
         if (product is null)
             return Result<ProductDto>.Fail("Ürün bulunamadı.");
 
-        return Result<ProductDto>.Ok(MapToDto(product));
+        var dto = MapToDto(product);
+        await ApplyCurrentRateToAllAsync([dto]);
+        return Result<ProductDto>.Ok(dto);
     }
 
     public async Task<Result<List<ProductDto>>> SearchAsync(string query, int storeId)
@@ -99,6 +132,7 @@ public class ProductService : IProductService
             .Select(p => MapToDto(p))
             .ToListAsync();
 
+        await ApplyCurrentRateToAllAsync(products);
         return Result<List<ProductDto>>.Ok(products);
     }
 
@@ -482,5 +516,43 @@ public class ProductService : IProductService
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         return stream.ToArray();
+    }
+
+    public async Task<Result<BulkUsdUpdateResult>> BulkUpdateUsdPricesAsync(int storeId)
+    {
+        var rate = await _exchangeRateService.RefreshAsync();
+        if (rate <= 0)
+            return Result<BulkUsdUpdateResult>.Fail("Güncel döviz kuru alınamadı. Lütfen daha sonra tekrar deneyin.");
+
+        // USD'li ürünleri bul
+        var usdProducts = await _context.Products
+            .Where(p => p.StoreId == storeId && p.SalePriceUsd.HasValue && p.SalePriceUsd > 0)
+            .ToListAsync();
+
+        if (usdProducts.Count == 0)
+            return Result<BulkUsdUpdateResult>.Ok(new BulkUsdUpdateResult
+            {
+                UpdatedCount = 0,
+                NewExchangeRate = rate,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+        foreach (var p in usdProducts)
+        {
+            if (p.SalePriceUsd.HasValue)
+                p.SalePrice = Math.Round(p.SalePriceUsd.Value * rate, 2);
+            if (p.CostPriceUsd.HasValue)
+                p.CostPrice = Math.Round(p.CostPriceUsd.Value * rate, 2);
+            p.ExchangeRate = rate;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Result<BulkUsdUpdateResult>.Ok(new BulkUsdUpdateResult
+        {
+            UpdatedCount = usdProducts.Count,
+            NewExchangeRate = rate,
+            UpdatedAt = DateTime.UtcNow
+        });
     }
 }

@@ -89,6 +89,12 @@ export interface Product {
   costPriceUsd?: number | null;
   salePriceUsd?: number | null;
   exchangeRate?: number | null;
+  /** USD'li ürünlerde günlük güncel kurla anlık hesaplanmış TL fiyat */
+  currentSalePrice?: number | null;
+  /** USD'li ürünlerde anlık hesaplanmış TL alış */
+  currentCostPrice?: number | null;
+  /** Anlık fiyat hesaplanırken kullanılan güncel kur */
+  currentExchangeRate?: number | null;
   taxRate: number;
   stockQuantity: number;
   minStockLevel: number;

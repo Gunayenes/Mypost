@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { storeSettingsApi, getLogoUrl, type StoreSettings } from '@/api/storeSettings';
 import { useStoreSettings } from '@/store/storeSettingsStore';
-import { Store, Upload, Trash2, Save, Palette } from 'lucide-react';
+import { Store, Upload, Trash2, Save, Palette, DollarSign, RefreshCw, CheckCircle } from 'lucide-react';
+import api from '@/api/client';
 
 export default function StoreSettingsPage() {
   const [settings, setSettings] = useState<StoreSettings | null>(null);
@@ -12,6 +13,27 @@ export default function StoreSettingsPage() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const globalStore = useStoreSettings();
+  const [updatingUsd, setUpdatingUsd] = useState(false);
+  const [usdResult, setUsdResult] = useState<{ count: number; rate: number } | null>(null);
+
+  const handleBulkUpdateUsd = async () => {
+    if (!confirm('Tüm USD\'li ürünlerin TL fiyatları güncel kura göre yeniden hesaplanacak. Devam edilsin mi?')) return;
+    setUpdatingUsd(true);
+    setUsdResult(null);
+    try {
+      const res = await api.post('/products/bulk-update-usd-prices');
+      const r = res.data as { success: boolean; data?: { updatedCount: number; newExchangeRate: number }; message?: string };
+      if (r.success && r.data) {
+        setUsdResult({ count: r.data.updatedCount, rate: r.data.newExchangeRate });
+      } else {
+        setMsg(r.message || 'Güncelleme başarısız.');
+      }
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      setMsg(e.response?.data?.message || 'Güncelleme başarısız.');
+    }
+    setUpdatingUsd(false);
+  };
 
   useEffect(() => {
     storeSettingsApi.get().then((res) => {
@@ -228,6 +250,39 @@ export default function StoreSettingsPage() {
           />
           <span className="text-xs text-gray-400 font-mono">{settings.themeColor || '#1a1a2e'}</span>
         </div>
+      </div>
+
+      {/* USD Kur Güncelleme */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-2">
+          <DollarSign size={20} className="text-green-600" />
+          <h2 className="text-lg font-semibold text-gray-900">USD Ürün Fiyatları</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Sistem her satışta zaten güncel kuru otomatik kullanır. Bu butonu yalnızca
+          <b> ürün listesindeki TL fiyatlarını</b> kalıcı olarak güncellemek isterseniz kullanın.
+        </p>
+
+        {usdResult && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+            <CheckCircle size={18} className="text-green-600 mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="font-bold text-green-800">Güncelleme başarılı!</p>
+              <p className="text-green-700 mt-0.5">
+                {usdResult.count} ürün, 1 USD = ₺{usdResult.rate.toFixed(2)} kuruyla güncellendi.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleBulkUpdateUsd}
+          disabled={updatingUsd}
+          className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 transition disabled:opacity-60"
+        >
+          <RefreshCw size={16} className={updatingUsd ? 'animate-spin' : ''} />
+          {updatingUsd ? 'Güncelleniyor...' : 'USD Kurlarını Güncelle'}
+        </button>
       </div>
     </div>
   );

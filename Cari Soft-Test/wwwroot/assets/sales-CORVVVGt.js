@@ -1,0 +1,1 @@
+import{k as e}from"./index-DJ5hbJr8.js";const a={getAll:s=>e.get("/sales",{params:s}),getById:s=>e.get(`/sales/${s}`),create:s=>e.post("/sales",s),cancel:s=>e.post(`/sales/${s}/cancel`),return:s=>e.post(`/sales/${s}/return`)};export{a as s};

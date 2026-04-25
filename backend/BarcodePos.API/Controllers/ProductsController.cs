@@ -194,4 +194,18 @@ public class ProductsController : ControllerBase
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"urunler-{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
+
+    /// <summary>
+    /// USD'li tüm ürünlerin TL fiyatlarını güncel kura göre yeniden hesaplar.
+    /// Mağaza Ayarları'ndaki "USD Kurlarını Güncelle" butonu çağırır.
+    /// </summary>
+    [Authorize(Roles = "Admin,Yonetici")]
+    [HttpPost("bulk-update-usd-prices")]
+    public async Task<IActionResult> BulkUpdateUsdPrices()
+    {
+        var result = await _productService.BulkUpdateUsdPricesAsync(_currentUser.StoreId);
+        if (!result.Success)
+            return BadRequest(new { success = false, message = result.Message });
+        return Ok(result);
+    }
 }

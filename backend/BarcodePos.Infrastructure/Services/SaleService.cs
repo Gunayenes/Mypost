@@ -11,10 +11,12 @@ namespace BarcodePos.Infrastructure.Services;
 public class SaleService : ISaleService
 {
     private readonly AppDbContext _context;
+    private readonly IExchangeRateService _exchangeRateService;
 
-    public SaleService(AppDbContext context)
+    public SaleService(AppDbContext context, IExchangeRateService exchangeRateService)
     {
         _context = context;
+        _exchangeRateService = exchangeRateService;
     }
 
     public async Task<Result<SaleResponseDto>> CreateAsync(CreateSaleRequest request, int storeId, int userId)
@@ -72,11 +74,28 @@ public class SaleService : ISaleService
             decimal taxTotal = 0;
             decimal itemDiscountTotal = 0;
 
+            // USD'li ürünlerde güncel kurla TL fiyat hesapla (dinamik fiyatlandırma)
+            decimal? currentUsdRate = null;
+            if (products.Any(p => p.SalePriceUsd.HasValue && p.SalePriceUsd > 0))
+            {
+                currentUsdRate = await _exchangeRateService.GetUsdTryRateAsync();
+            }
+
             foreach (var item in request.Items)
             {
                 var product = products.First(p => p.Id == item.ProductId);
 
-                var lineGross = product.SalePrice * item.Quantity;
+                // USD'li ürünse güncel kurla satış fiyatını yeniden hesapla
+                var unitPrice = product.SalePrice;
+                var costPrice = product.CostPrice;
+                if (product.SalePriceUsd is > 0 && currentUsdRate is > 0)
+                {
+                    unitPrice = Math.Round(product.SalePriceUsd.Value * currentUsdRate.Value, 2);
+                    if (product.CostPriceUsd is > 0)
+                        costPrice = Math.Round(product.CostPriceUsd.Value * currentUsdRate.Value, 2);
+                }
+
+                var lineGross = unitPrice * item.Quantity;
                 var lineNet = lineGross - item.DiscountAmount;
                 var lineTax = lineNet * (product.TaxRate / 100m);
                 var lineTotal = lineNet;
@@ -91,8 +110,8 @@ public class SaleService : ISaleService
                     ProductName = product.Name,
                     Barcode = product.Barcode,
                     Quantity = item.Quantity,
-                    UnitPrice = product.SalePrice,
-                    CostPrice = product.CostPrice,
+                    UnitPrice = unitPrice,
+                    CostPrice = costPrice,
                     TaxRate = product.TaxRate,
                     DiscountAmount = item.DiscountAmount,
                     LineTotal = lineTotal
