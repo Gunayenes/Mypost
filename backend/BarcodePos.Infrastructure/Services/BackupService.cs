@@ -1,11 +1,14 @@
 using BarcodePos.Application.Common;
 using BarcodePos.Application.DTOs.Backup;
 using BarcodePos.Application.Interfaces;
+using BarcodePos.Domain.Entities;
 using BarcodePos.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace BarcodePos.Infrastructure.Services;
@@ -18,13 +21,20 @@ public partial class BackupService : IBackupService
     private readonly string _dbPath;
     private readonly string _backupDir;
     private readonly bool _isSqlite;
+    private readonly bool _isSqlServer;
 
-    // Dosya adı güvenlik kontrolü — sadece güvenli karakterler
     [GeneratedRegex(@"^[a-zA-Z0-9_\-\.]+$")]
     private static partial Regex SafeFileNameRegex();
 
-    // SQLite dosya başlık imzası (ilk 16 byte)
     private static readonly byte[] SqliteHeader = "SQLite format 3\0"u8.ToArray();
+
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        ReferenceHandler = ReferenceHandler.IgnoreCycles,
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
     public BackupService(AppDbContext context, IConfiguration configuration, ILogger<BackupService> logger)
     {
@@ -33,51 +43,47 @@ public partial class BackupService : IBackupService
         _logger = logger;
 
         var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "Data Source=BarcodePos.db";
-        // SQLite: Host=/Server=/Initial Catalog= yoksa, ve .db uzantılı dosya ise
-        _isSqlite = !connectionString.Contains("Host=", System.StringComparison.OrdinalIgnoreCase)
-                 && !connectionString.Contains("Server=", System.StringComparison.OrdinalIgnoreCase)
-                 && !connectionString.Contains("Initial Catalog=", System.StringComparison.OrdinalIgnoreCase);
+        var providerName = _context.Database.ProviderName ?? string.Empty;
+        _isSqlite = providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase);
+        _isSqlServer = providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase);
 
         if (_isSqlite)
         {
-            // SQLite: Connection string'den DB dosya yolunu çıkar
             var builder = new SqliteConnectionStringBuilder(connectionString);
             _dbPath = Path.GetFullPath(builder.DataSource);
             _backupDir = Path.Combine(Path.GetDirectoryName(_dbPath)!, "backups");
-            Directory.CreateDirectory(_backupDir);
         }
         else
         {
-            // PostgreSQL: Yedekleme dosya tabanlı değil
             _dbPath = string.Empty;
             _backupDir = Path.Combine(AppContext.BaseDirectory, "backups");
-            Directory.CreateDirectory(_backupDir);
         }
+        Directory.CreateDirectory(_backupDir);
     }
 
     public async Task<Result<BackupResultDto>> CreateBackupAsync()
     {
-        if (!_isSqlite)
-            return Result<BackupResultDto>.Fail("PostgreSQL ortamında dosya tabanlı yedekleme desteklenmez. Veritabanı sağlayıcınızın yedekleme araçlarını kullanın.");
+        if (_isSqlite) return await CreateSqliteBackupAsync();
+        if (_isSqlServer) return await CreateJsonBackupAsync();
+        return Result<BackupResultDto>.Fail("Bu veritabanı sağlayıcısı için yedekleme desteklenmiyor.");
+    }
 
+    private async Task<Result<BackupResultDto>> CreateSqliteBackupAsync()
+    {
         try
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
             var backupFileName = $"BarcodePos_{timestamp}.db";
             var backupPath = Path.Combine(_backupDir, backupFileName);
 
-            // WAL modundaki bekleyen yazımları ana dosyaya aktar
             await _context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
-
-            // VACUUM INTO ile tutarlı bir kopya oluştur — tek tırnak escape ile SQL injection engellenir
             var sanitizedPath = backupPath.Replace("'", "''");
-#pragma warning disable EF1002 // backupPath kullanıcı girdisi değil, timestamp'ten üretilir
+#pragma warning disable EF1002
             await _context.Database.ExecuteSqlRawAsync($"VACUUM INTO '{sanitizedPath}';");
 #pragma warning restore EF1002
 
             var fileInfo = new FileInfo(backupPath);
-
-            _logger.LogInformation("Yedek oluşturuldu: {FileName} ({Size} bytes)", backupFileName, fileInfo.Length);
+            _logger.LogInformation("SQLite yedek oluşturuldu: {FileName} ({Size} bytes)", backupFileName, fileInfo.Length);
 
             return Result<BackupResultDto>.Ok(new BackupResultDto
             {
@@ -88,17 +94,72 @@ public partial class BackupService : IBackupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Yedek oluşturulurken hata oluştu");
+            _logger.LogError(ex, "SQLite yedek oluşturulurken hata oluştu");
             return Result<BackupResultDto>.Fail($"Yedek oluşturulamadı: {ex.Message}");
         }
+    }
+
+    private async Task<Result<BackupResultDto>> CreateJsonBackupAsync()
+    {
+        try
+        {
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
+            var fileName = $"BarcodePos_{timestamp}.json";
+            var path = Path.Combine(_backupDir, fileName);
+
+            var data = await ReadAllDataAsync();
+
+            await using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
+            await JsonSerializer.SerializeAsync(fs, data, JsonOpts);
+
+            var fi = new FileInfo(path);
+            _logger.LogInformation("JSON yedek oluşturuldu: {FileName} ({Size} bytes)", fileName, fi.Length);
+
+            return Result<BackupResultDto>.Ok(new BackupResultDto
+            {
+                FileName = fileName,
+                FileSizeBytes = fi.Length,
+                Message = "Yedek başarıyla oluşturuldu."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "JSON yedek oluşturulurken hata oluştu");
+            return Result<BackupResultDto>.Fail($"Yedek oluşturulamadı: {ex.Message}");
+        }
+    }
+
+    private async Task<JsonBackupData> ReadAllDataAsync()
+    {
+        return new JsonBackupData
+        {
+            Version = "1.0",
+            ExportedAt = DateTime.UtcNow,
+            Stores = await _context.Stores.AsNoTracking().ToListAsync(),
+            SubscriptionPlans = await _context.SubscriptionPlans.AsNoTracking().ToListAsync(),
+            Users = await _context.Users.AsNoTracking().ToListAsync(),
+            Categories = await _context.Categories.AsNoTracking().ToListAsync(),
+            Customers = await _context.Customers.AsNoTracking().ToListAsync(),
+            WebCustomers = await _context.WebCustomers.AsNoTracking().ToListAsync(),
+            Subscriptions = await _context.Subscriptions.AsNoTracking().ToListAsync(),
+            Products = await _context.Products.AsNoTracking().ToListAsync(),
+            Sales = await _context.Sales.AsNoTracking().ToListAsync(),
+            SaleItems = await _context.SaleItems.AsNoTracking().ToListAsync(),
+            StockMovements = await _context.StockMovements.AsNoTracking().ToListAsync(),
+            CustomerTransactions = await _context.CustomerTransactions.AsNoTracking().ToListAsync(),
+            ServiceRecords = await _context.ServiceRecords.AsNoTracking().ToListAsync(),
+            ServiceLogs = await _context.ServiceLogs.AsNoTracking().ToListAsync(),
+            ServiceParts = await _context.ServiceParts.AsNoTracking().ToListAsync(),
+            ContactMessages = await _context.ContactMessages.AsNoTracking().ToListAsync(),
+        };
     }
 
     public Task<Result<List<BackupInfoDto>>> GetBackupListAsync()
     {
         try
         {
-            var backups = new DirectoryInfo(_backupDir)
-                .GetFiles("*.db")
+            var dir = new DirectoryInfo(_backupDir);
+            var backups = dir.GetFiles("*.db").Concat(dir.GetFiles("*.json"))
                 .OrderByDescending(f => f.CreationTime)
                 .Select(f => new BackupInfoDto
                 {
@@ -119,13 +180,10 @@ public partial class BackupService : IBackupService
 
     public async Task<Result<RestoreResultDto>> RestoreFromFileAsync(Stream fileStream)
     {
-        if (!_isSqlite)
-            return Result<RestoreResultDto>.Fail("PostgreSQL ortamında dosya tabanlı geri yükleme desteklenmez.");
-
         try
         {
             // Yüklenen dosyayı geçici konuma kaydet
-            var tempPath = Path.Combine(_backupDir, $"_upload_temp_{Guid.NewGuid()}.db");
+            var tempPath = Path.Combine(_backupDir, $"_upload_temp_{Guid.NewGuid()}.tmp");
             try
             {
                 await using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
@@ -133,20 +191,24 @@ public partial class BackupService : IBackupService
                     await fileStream.CopyToAsync(fs);
                 }
 
-                // SQLite dosyası mı kontrol et
-                if (!IsValidSqliteFile(tempPath))
+                // Dosya tipini tespit et
+                if (IsValidSqliteFile(tempPath))
                 {
-                    File.Delete(tempPath);
-                    return Result<RestoreResultDto>.Fail("Geçersiz dosya. Lütfen geçerli bir SQLite veritabanı dosyası yükleyin.");
+                    if (!_isSqlite)
+                        return Result<RestoreResultDto>.Fail("Bu sunucu MSSQL kullanıyor; SQLite yedeği geri yüklenemez.");
+                    return await PerformSqliteRestoreAsync(tempPath);
                 }
-
-                return await PerformRestoreAsync(tempPath);
+                if (await IsValidJsonBackupAsync(tempPath))
+                {
+                    if (!_isSqlServer)
+                        return Result<RestoreResultDto>.Fail("Bu sunucu SQLite kullanıyor; JSON yedeği geri yüklenemez.");
+                    return await PerformJsonRestoreAsync(tempPath);
+                }
+                return Result<RestoreResultDto>.Fail("Geçersiz dosya. Lütfen geçerli bir yedek dosyası yükleyin (.db veya .json).");
             }
             finally
             {
-                // Geçici dosyayı temizle
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
+                if (File.Exists(tempPath)) File.Delete(tempPath);
             }
         }
         catch (Exception ex)
@@ -158,9 +220,6 @@ public partial class BackupService : IBackupService
 
     public async Task<Result<RestoreResultDto>> RestoreFromExistingAsync(string fileName)
     {
-        if (!_isSqlite)
-            return Result<RestoreResultDto>.Fail("PostgreSQL ortamında dosya tabanlı geri yükleme desteklenmez.");
-
         try
         {
             if (!IsValidFileName(fileName))
@@ -170,10 +229,25 @@ public partial class BackupService : IBackupService
             if (!File.Exists(backupPath))
                 return Result<RestoreResultDto>.Fail("Yedek dosyası bulunamadı.");
 
-            if (!IsValidSqliteFile(backupPath))
-                return Result<RestoreResultDto>.Fail("Yedek dosyası geçerli bir SQLite veritabanı değil.");
+            if (fileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!_isSqlite)
+                    return Result<RestoreResultDto>.Fail("Bu sunucu MSSQL kullanıyor; SQLite (.db) yedeği geri yüklenemez.");
+                if (!IsValidSqliteFile(backupPath))
+                    return Result<RestoreResultDto>.Fail("Yedek dosyası geçerli bir SQLite veritabanı değil.");
+                return await PerformSqliteRestoreAsync(backupPath);
+            }
 
-            return await PerformRestoreAsync(backupPath);
+            if (fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!_isSqlServer)
+                    return Result<RestoreResultDto>.Fail("Bu sunucu SQLite kullanıyor; JSON yedeği geri yüklenemez.");
+                if (!await IsValidJsonBackupAsync(backupPath))
+                    return Result<RestoreResultDto>.Fail("Yedek dosyası geçerli bir JSON yedeği değil.");
+                return await PerformJsonRestoreAsync(backupPath);
+            }
+
+            return Result<RestoreResultDto>.Fail("Desteklenmeyen yedek formatı.");
         }
         catch (Exception ex)
         {
@@ -195,7 +269,6 @@ public partial class BackupService : IBackupService
 
             File.Delete(filePath);
             _logger.LogInformation("Yedek silindi: {FileName}", fileName);
-
             return Task.FromResult(Result.Ok("Yedek başarıyla silindi."));
         }
         catch (Exception ex)
@@ -226,38 +299,24 @@ public partial class BackupService : IBackupService
         }
     }
 
-    // ── Yardımcı Metotlar ──
+    // ── SQLite restore (mevcut) ──
 
-    /// <summary>
-    /// Geri yükleme işlemini gerçekleştirir:
-    /// 1. Mevcut DB'yi otomatik yedekle (pre-restore)
-    /// 2. EF Core bağlantısını kapat
-    /// 3. Kaynak dosyayı aktif DB üzerine kopyala
-    /// </summary>
-    private async Task<Result<RestoreResultDto>> PerformRestoreAsync(string sourcePath)
+    private async Task<Result<RestoreResultDto>> PerformSqliteRestoreAsync(string sourcePath)
     {
-        // 1. Mevcut DB'yi otomatik yedekle
         var preRestoreFileName = $"BarcodePos_pre_restore_{DateTime.Now:yyyy-MM-dd_HHmmss}.db";
         var preRestorePath = Path.Combine(_backupDir, preRestoreFileName);
         File.Copy(_dbPath, preRestorePath, overwrite: true);
-        _logger.LogInformation("Geri yükleme öncesi otomatik yedek alındı: {FileName}", preRestoreFileName);
 
-        // 2. EF Core bağlantısını kapat — SQLite dosyası kilidi serbest kalsın
         var connection = _context.Database.GetDbConnection();
         await connection.CloseAsync();
 
         try
         {
-            // 3. Kaynak dosyayı aktif DB üzerine kopyala
             File.Copy(sourcePath, _dbPath, overwrite: true);
-
-            // WAL ve SHM dosyalarını temizle (varsa)
             var walPath = _dbPath + "-wal";
             var shmPath = _dbPath + "-shm";
             if (File.Exists(walPath)) File.Delete(walPath);
             if (File.Exists(shmPath)) File.Delete(shmPath);
-
-            _logger.LogInformation("Veritabanı geri yüklendi: {Source}", Path.GetFileName(sourcePath));
 
             return Result<RestoreResultDto>.Ok(new RestoreResultDto
             {
@@ -267,52 +326,199 @@ public partial class BackupService : IBackupService
         }
         catch
         {
-            // Hata durumunda bağlantıyı geri aç
             await connection.OpenAsync();
             throw;
         }
     }
 
-    /// <summary>
-    /// Dosya adı güvenlik kontrolü — path traversal engelleme.
-    /// </summary>
-    private static bool IsValidFileName(string fileName)
+    // ── JSON restore (MSSQL) ──
+
+    private async Task<Result<RestoreResultDto>> PerformJsonRestoreAsync(string sourcePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-            return false;
+        // Önce mevcut veriden bir yedek al (geri dönüş için)
+        var preRestore = await CreateJsonBackupAsync();
+        var preRestoreFileName = preRestore.Success ? preRestore.Data!.FileName : null;
 
-        if (!SafeFileNameRegex().IsMatch(fileName))
-            return false;
+        // JSON'u oku
+        await using var fs = new FileStream(sourcePath, FileMode.Open, FileAccess.Read);
+        var data = await JsonSerializer.DeserializeAsync<JsonBackupData>(fs, JsonOpts)
+            ?? throw new InvalidOperationException("JSON yedeği okunamadı.");
 
-        if (!fileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
-            return false;
+        // Tek bir transaction içinde:
+        //   1) FK kontrollerini geçici olarak kapat
+        //   2) Tüm tabloları sil
+        //   3) IDENTITY_INSERT ON ile veriyi yeniden yaz
+        //   4) FK kontrollerini geri aç
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // 1) FK constraint'leri kapat
+            await _context.Database.ExecuteSqlRawAsync(
+                "EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'");
 
-        // Path traversal kontrolü
-        if (fileName.Contains("..") || fileName.Contains('/') || fileName.Contains('\\'))
-            return false;
+            // 2) Tabloları temizle (child → parent sırası)
+            string[] deleteOrder = [
+                nameof(_context.ServiceParts), nameof(_context.ServiceLogs), nameof(_context.ServiceRecords),
+                nameof(_context.ContactMessages),
+                nameof(_context.CustomerTransactions),
+                nameof(_context.StockMovements),
+                nameof(_context.SaleItems), nameof(_context.Sales),
+                nameof(_context.Products),
+                nameof(_context.Subscriptions), nameof(_context.WebCustomers),
+                nameof(_context.Customers), nameof(_context.Categories),
+                nameof(_context.Users),
+                nameof(_context.SubscriptionPlans),
+                nameof(_context.Stores),
+            ];
+#pragma warning disable EF1002 // tablo adları nameof() ile elde ediliyor — kullanıcı girdisi değil
+            foreach (var t in deleteOrder)
+                await _context.Database.ExecuteSqlRawAsync($"DELETE FROM [{t}]");
+#pragma warning restore EF1002
 
-        return true;
+            // 3) Veriyi yeniden yaz (parent → child)
+            await BulkInsertAsync(_context.Stores, data.Stores);
+            await BulkInsertAsync(_context.SubscriptionPlans, data.SubscriptionPlans);
+            await BulkInsertAsync(_context.Users, data.Users);
+            await BulkInsertAsync(_context.Categories, data.Categories);
+            await BulkInsertAsync(_context.Customers, data.Customers);
+            await BulkInsertAsync(_context.WebCustomers, data.WebCustomers);
+            await BulkInsertAsync(_context.Subscriptions, data.Subscriptions);
+            await BulkInsertAsync(_context.Products, data.Products);
+            await BulkInsertAsync(_context.Sales, data.Sales);
+            await BulkInsertAsync(_context.SaleItems, data.SaleItems);
+            await BulkInsertAsync(_context.StockMovements, data.StockMovements);
+            await BulkInsertAsync(_context.CustomerTransactions, data.CustomerTransactions);
+            await BulkInsertAsync(_context.ServiceRecords, data.ServiceRecords);
+            await BulkInsertAsync(_context.ServiceLogs, data.ServiceLogs);
+            await BulkInsertAsync(_context.ServiceParts, data.ServiceParts);
+            await BulkInsertAsync(_context.ContactMessages, data.ContactMessages);
+
+            // 4) FK constraint'leri geri aç
+            await _context.Database.ExecuteSqlRawAsync(
+                "EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL'");
+
+            await tx.CommitAsync();
+
+            _logger.LogInformation("JSON yedekten geri yükleme tamamlandı: {Source}", Path.GetFileName(sourcePath));
+            return Result<RestoreResultDto>.Ok(new RestoreResultDto
+            {
+                Message = "Veritabanı başarıyla geri yüklendi.",
+                PreRestoreBackupFileName = preRestoreFileName
+            });
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            // Constraint'leri yine de açmaya çalış (hata sonrası)
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL'");
+            }
+            catch { /* sessiz */ }
+            throw;
+        }
     }
 
     /// <summary>
-    /// SQLite dosya başlık imzası kontrolü — ilk 16 byte.
+    /// MSSQL'e IDENTITY_INSERT ON ile birden fazla satır ekler.
+    /// EF Core'un ChangeTracker'ı üzerinden gider — Id'ler korunur.
     /// </summary>
+    private async Task BulkInsertAsync<T>(DbSet<T> dbSet, List<T>? items) where T : class
+    {
+        if (items is null || items.Count == 0) return;
+
+        var entityType = _context.Model.FindEntityType(typeof(T));
+        var tableName = entityType?.GetTableName() ?? typeof(T).Name;
+
+        // Identity column varsa IDENTITY_INSERT ON
+        var hasIdentity = entityType?.GetProperties().Any(p =>
+            Microsoft.EntityFrameworkCore.SqlServerPropertyExtensions.GetValueGenerationStrategy(p)
+                == Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.IdentityColumn) ?? false;
+
+#pragma warning disable EF1002 // tableName EF Core'dan geliyor — kullanıcı girdisi değil
+        if (hasIdentity)
+            await _context.Database.ExecuteSqlRawAsync($"SET IDENTITY_INSERT [{tableName}] ON");
+
+        try
+        {
+            // Geçici olarak Id'lerin generated olmadığını söyle
+            foreach (var item in items)
+            {
+                var entry = _context.Entry(item);
+                entry.State = EntityState.Added;
+            }
+            await _context.SaveChangesAsync();
+            // Track edilen entity'leri detach et — bir sonraki tablo için temiz başlasın
+            foreach (var item in items)
+                _context.Entry(item).State = EntityState.Detached;
+        }
+        finally
+        {
+            if (hasIdentity)
+                await _context.Database.ExecuteSqlRawAsync($"SET IDENTITY_INSERT [{tableName}] OFF");
+        }
+#pragma warning restore EF1002
+    }
+
+    // ── Doğrulama yardımcıları ──
+
+    private static bool IsValidFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return false;
+        if (!SafeFileNameRegex().IsMatch(fileName)) return false;
+        if (!fileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase)
+            && !fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return false;
+        if (fileName.Contains("..") || fileName.Contains('/') || fileName.Contains('\\')) return false;
+        return true;
+    }
+
     private static bool IsValidSqliteFile(string filePath)
     {
         try
         {
             using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (fs.Length < 100) // SQLite minimum dosya boyutu
-                return false;
-
+            if (fs.Length < 100) return false;
             var header = new byte[16];
             _ = fs.Read(header, 0, 16);
-
             return header.AsSpan().SequenceEqual(SqliteHeader);
         }
-        catch
-        {
-            return false;
-        }
+        catch { return false; }
     }
+
+    private static async Task<bool> IsValidJsonBackupAsync(string filePath)
+    {
+        try
+        {
+            await using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var data = await JsonSerializer.DeserializeAsync<JsonBackupData>(fs, JsonOpts);
+            return data is not null && !string.IsNullOrEmpty(data.Version);
+        }
+        catch { return false; }
+    }
+}
+
+/// <summary>
+/// JSON yedek dosyasının şeması. Tüm tablolar düz liste olarak tutulur.
+/// </summary>
+internal class JsonBackupData
+{
+    public string Version { get; set; } = "1.0";
+    public DateTime ExportedAt { get; set; }
+    public List<Store> Stores { get; set; } = [];
+    public List<SubscriptionPlan> SubscriptionPlans { get; set; } = [];
+    public List<User> Users { get; set; } = [];
+    public List<Category> Categories { get; set; } = [];
+    public List<Customer> Customers { get; set; } = [];
+    public List<WebCustomer> WebCustomers { get; set; } = [];
+    public List<Subscription> Subscriptions { get; set; } = [];
+    public List<Product> Products { get; set; } = [];
+    public List<Sale> Sales { get; set; } = [];
+    public List<SaleItem> SaleItems { get; set; } = [];
+    public List<StockMovement> StockMovements { get; set; } = [];
+    public List<CustomerTransaction> CustomerTransactions { get; set; } = [];
+    public List<ServiceRecord> ServiceRecords { get; set; } = [];
+    public List<ServiceLog> ServiceLogs { get; set; } = [];
+    public List<ServicePart> ServiceParts { get; set; } = [];
+    public List<ContactMessage> ContactMessages { get; set; } = [];
 }
