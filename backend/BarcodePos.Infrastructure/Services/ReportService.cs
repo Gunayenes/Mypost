@@ -28,16 +28,31 @@ public class ReportService : IReportService
 
         var completed = sales.Where(s => s.Status == SaleStatus.Tamamlandi).ToList();
 
+        // Servis geliri — o gün teslim edilen servis kayıtlarının tahsil edilen tutarı
+        var deliveredServices = await _context.ServiceRecords
+            .AsNoTracking()
+            .Where(sr => sr.StoreId == storeId
+                      && sr.Status == ServiceStatus.TeslimEdildi
+                      && sr.DeliveredDate >= dayStart && sr.DeliveredDate < dayEnd)
+            .Select(sr => new { sr.PaidAmount })
+            .ToListAsync();
+
+        var totalSales = completed.Sum(s => s.GrandTotal);
+        var serviceRevenue = deliveredServices.Sum(s => s.PaidAmount);
+
         return Result<DailySalesReportDto>.Ok(new DailySalesReportDto
         {
             Date = dayStart,
-            TotalSales = completed.Sum(s => s.GrandTotal),
+            TotalSales = totalSales,
             SaleCount = completed.Count,
             CashTotal = completed.Where(s => s.PaymentType == PaymentType.Nakit).Sum(s => s.GrandTotal),
             CardTotal = completed.Where(s => s.PaymentType == PaymentType.Kart).Sum(s => s.GrandTotal),
             CreditTotal = completed.Where(s => s.PaymentType == PaymentType.Veresiye).Sum(s => s.GrandTotal),
             CancelCount = sales.Count(s => s.Status == SaleStatus.Iptal),
-            ReturnCount = sales.Count(s => s.Status == SaleStatus.Iade)
+            ReturnCount = sales.Count(s => s.Status == SaleStatus.Iade),
+            ServiceRevenue = serviceRevenue,
+            ServiceCount = deliveredServices.Count,
+            CombinedTotal = totalSales + serviceRevenue
         });
     }
 
@@ -53,6 +68,17 @@ public class ReportService : IReportService
             .Include(s => s.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Category)
             .Where(s => s.StoreId == storeId && s.SaleDate >= dayStart && s.SaleDate < dayEnd)
             .ToListAsync();
+
+        // Servis geliri — o gün teslim edilen servis kayıtlarının tahsilatı
+        var deliveredServices = await _context.ServiceRecords
+            .AsNoTracking()
+            .Where(sr => sr.StoreId == storeId
+                      && sr.Status == ServiceStatus.TeslimEdildi
+                      && sr.DeliveredDate >= dayStart && sr.DeliveredDate < dayEnd)
+            .Select(sr => new { sr.PaidAmount })
+            .ToListAsync();
+
+        var serviceRevenue = deliveredServices.Sum(s => s.PaidAmount);
 
         var completed = allSales.Where(s => s.Status == SaleStatus.Tamamlandi).ToList();
         var cancelled = allSales.Where(s => s.Status == SaleStatus.Iptal).ToList();
@@ -138,6 +164,9 @@ public class ReportService : IReportService
             TotalCost = totalCost,
             GrossProfit = grossProfit,
             GrossProfitMargin = grandTotal > 0 ? Math.Round(grossProfit / grandTotal * 100, 2) : 0,
+            ServiceRevenue = serviceRevenue,
+            ServiceCount = deliveredServices.Count,
+            CombinedTotal = grandTotal + serviceRevenue,
             HourlyBreakdown = hourlyBreakdown,
             CashierBreakdown = cashierBreakdown,
             TopProducts = topProducts

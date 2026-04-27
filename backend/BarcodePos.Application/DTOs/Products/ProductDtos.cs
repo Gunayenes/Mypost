@@ -56,6 +56,8 @@ public class UpdateProductRequest
     public decimal? ExchangeRate { get; set; }
     public decimal TaxRate { get; set; }
     public int MinStockLevel { get; set; }
+    /// <summary>Yeni stok adedi. Mevcut stoktan farklıysa Düzeltme tipinde bir stok hareketi oluşturulur.</summary>
+    public int? StockQuantity { get; set; }
 }
 
 public class ProductListFilter

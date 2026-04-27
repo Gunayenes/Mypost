@@ -93,5 +93,9 @@ public class UpdateProductRequestValidator : AbstractValidator<UpdateProductRequ
 
         RuleFor(x => x.MinStockLevel)
             .GreaterThanOrEqualTo(0).WithMessage("Minimum stok seviyesi 0 veya üzeri olmalıdır.");
+
+        RuleFor(x => x.StockQuantity!.Value)
+            .GreaterThanOrEqualTo(0).When(x => x.StockQuantity.HasValue)
+            .WithMessage("Stok miktarı 0 veya üzeri olmalıdır.");
     }
 }

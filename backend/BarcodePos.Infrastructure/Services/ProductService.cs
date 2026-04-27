@@ -2,6 +2,7 @@ using BarcodePos.Application.Common;
 using BarcodePos.Application.DTOs.Products;
 using BarcodePos.Application.Interfaces;
 using BarcodePos.Domain.Entities;
+using BarcodePos.Domain.Enums;
 using BarcodePos.Infrastructure.Persistence;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
@@ -250,7 +251,7 @@ public class ProductService : IProductService
         return Result<ProductDto>.Ok(MapToDto(product), "Ürün oluşturuldu.");
     }
 
-    public async Task<Result<ProductDto>> UpdateAsync(int id, UpdateProductRequest request, int storeId)
+    public async Task<Result<ProductDto>> UpdateAsync(int id, UpdateProductRequest request, int storeId, int userId)
     {
         var product = await _context.Products
             .Include(p => p.Category)
@@ -288,7 +289,22 @@ public class ProductService : IProductService
             : request.SalePrice;
         product.TaxRate = request.TaxRate;
         product.MinStockLevel = request.MinStockLevel;
-        // NOT: StockQuantity CRUD ile güncellenmez
+
+        // Stok düzeltmesi — yeni miktar mevcuttan farklıysa Duzeltme hareketi kaydet
+        if (request.StockQuantity.HasValue && request.StockQuantity.Value != product.StockQuantity)
+        {
+            var diff = request.StockQuantity.Value - product.StockQuantity;
+            product.StockQuantity = request.StockQuantity.Value;
+            _context.StockMovements.Add(new StockMovement
+            {
+                ProductId = product.Id,
+                UserId = userId,
+                Type = MovementType.Duzeltme,
+                Quantity = diff,
+                StockAfter = product.StockQuantity,
+                Note = "Ürün düzenleme ekranından güncellendi."
+            });
+        }
 
         await _context.SaveChangesAsync();
 

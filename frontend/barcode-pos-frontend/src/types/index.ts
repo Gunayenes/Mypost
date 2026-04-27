@@ -130,6 +130,8 @@ export interface UpdateProductRequest {
   exchangeRate?: number | null;
   taxRate: number;
   minStockLevel: number;
+  /** Mevcuttan farklıysa Düzeltme türünde stok hareketi oluşturulur. */
+  stockQuantity?: number | null;
 }
 
 // ── Customer ──

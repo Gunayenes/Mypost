@@ -12,7 +12,7 @@ public interface IProductService
     Task<Result<List<LowStockProductDto>>> GetLowStockAsync(int storeId);
     Task<Result<string>> GenerateBarcodeAsync(int storeId);
     Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, int storeId);
-    Task<Result<ProductDto>> UpdateAsync(int id, UpdateProductRequest request, int storeId);
+    Task<Result<ProductDto>> UpdateAsync(int id, UpdateProductRequest request, int storeId, int userId);
     Task<Result> DeleteAsync(int id, int storeId);
     Task<Result<BulkImportResultDto>> BulkImportAsync(Stream excelStream, int storeId);
     Task<byte[]> GetImportTemplateAsync();

@@ -10,6 +10,13 @@ public class DailySalesReportDto
     public decimal CreditTotal { get; set; }
     public int CancelCount { get; set; }
     public int ReturnCount { get; set; }
+
+    /// <summary>O gün teslim edilen servis kayıtlarının tahsil edilen tutarı.</summary>
+    public decimal ServiceRevenue { get; set; }
+    /// <summary>O gün teslim edilen servis kaydı sayısı.</summary>
+    public int ServiceCount { get; set; }
+    /// <summary>Satış + servis geliri toplamı.</summary>
+    public decimal CombinedTotal { get; set; }
 }
 
 public class PeriodSalesReportDto
@@ -176,6 +183,11 @@ public class DailyClosingReportDto
     public decimal TotalCost { get; set; }
     public decimal GrossProfit { get; set; }
     public decimal GrossProfitMargin { get; set; }
+
+    // Servis Geliri (o gün teslim edilen servis kayıtlarının tahsilatı)
+    public decimal ServiceRevenue { get; set; }
+    public int ServiceCount { get; set; }
+    public decimal CombinedTotal { get; set; }
 
     // Saatlik Dağılım
     public List<HourlySalesDto> HourlyBreakdown { get; set; } = [];

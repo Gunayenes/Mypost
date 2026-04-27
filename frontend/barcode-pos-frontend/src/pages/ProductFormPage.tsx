@@ -251,6 +251,7 @@ export default function ProductFormPage() {
     try {
       if (existingProduct) {
         // Güncelle
+        const stockChanged = form.stockQuantity !== existingProduct.stockQuantity;
         const { data: res } = await productsApi.update(existingProduct.id, {
           categoryId: form.categoryId,
           barcode: form.barcode,
@@ -263,10 +264,12 @@ export default function ProductFormPage() {
           exchangeRate: currencyMode === 'USD' && form.exchangeRate > 0 ? form.exchangeRate : null,
           taxRate: form.taxRate,
           minStockLevel: form.minStockLevel,
+          stockQuantity: stockChanged ? form.stockQuantity : null,
         });
         if (res.success) {
           setSuccess('Ürün başarıyla güncellendi!');
           setExistingProduct(res.data!);
+          if (stockChanged) loadMovements(res.data!.id);
         } else {
           setError(res.message ?? 'Güncelleme başarısız.');
         }
@@ -460,19 +463,22 @@ export default function ProductFormPage() {
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
                       <Package size={13} /> Kalan Stok
                     </label>
-                    {existingProduct ? (
-                      <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 tabular-nums">
-                        {existingProduct.stockQuantity}
-                      </div>
-                    ) : (
-                      <input
-                        type="number"
-                        value={form.stockQuantity || ''}
-                        onChange={(e) => setForm({ ...form, stockQuantity: +e.target.value })}
-                        placeholder="0"
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:border-blue-500 outline-none"
-                        min={0}
-                      />
+                    <input
+                      type="number"
+                      value={form.stockQuantity ?? 0}
+                      onChange={(e) => setForm({ ...form, stockQuantity: +e.target.value })}
+                      placeholder="0"
+                      className={`w-full px-3 py-2.5 border rounded-lg text-sm font-medium focus:border-blue-500 outline-none ${
+                        existingProduct && form.stockQuantity !== existingProduct.stockQuantity
+                          ? 'border-amber-400 bg-amber-50'
+                          : 'border-gray-300'
+                      }`}
+                      min={0}
+                    />
+                    {existingProduct && form.stockQuantity !== existingProduct.stockQuantity && (
+                      <p className="text-[10px] text-amber-700 mt-1">
+                        {existingProduct.stockQuantity} → {form.stockQuantity} (Düzeltme kaydı oluşturulur)
+                      </p>
                     )}
                   </div>
                   <div>

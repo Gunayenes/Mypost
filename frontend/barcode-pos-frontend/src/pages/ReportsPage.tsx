@@ -70,6 +70,9 @@ interface DailyClosingData {
   totalCost: number;
   grossProfit: number;
   grossProfitMargin: number;
+  serviceRevenue: number;
+  serviceCount: number;
+  combinedTotal: number;
   hourlyBreakdown: HourlySales[];
   cashierBreakdown: CashierSales[];
   topProducts: TopProduct[];
@@ -163,14 +166,14 @@ export default function ReportsPage() {
 
   const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const tabs: { key: TabKey; label: string; icon: typeof BarChart3; color: string }[] = [
-    { key: 'daily-closing', label: 'Günlük Rapor', icon: Calendar, color: 'emerald' },
-    { key: 'sales', label: 'Satış Raporu', icon: BarChart3, color: 'blue' },
-    { key: 'profit', label: 'Kâr / Zarar', icon: DollarSign, color: 'green' },
-    { key: 'top-products', label: 'En Çok Satanlar', icon: ShoppingCart, color: 'purple' },
-    { key: 'payment', label: 'Ödeme Dağılımı', icon: CreditCard, color: 'indigo' },
-    { key: 'low-stock', label: 'Düşük Stok', icon: AlertTriangle, color: 'red' },
-    { key: 'services', label: 'Servis Raporu', icon: Wrench, color: 'cyan' },
+  const tabs: { key: TabKey; label: string; icon: typeof BarChart3; activeClass: string }[] = [
+    { key: 'daily-closing', label: 'Günlük Rapor', icon: Calendar, activeClass: 'bg-emerald-500 text-white' },
+    { key: 'sales', label: 'Satış Raporu', icon: BarChart3, activeClass: 'bg-blue-500 text-white' },
+    { key: 'profit', label: 'Kâr / Zarar', icon: DollarSign, activeClass: 'bg-green-500 text-white' },
+    { key: 'top-products', label: 'En Çok Satanlar', icon: ShoppingCart, activeClass: 'bg-purple-500 text-white' },
+    { key: 'payment', label: 'Ödeme Dağılımı', icon: CreditCard, activeClass: 'bg-indigo-500 text-white' },
+    { key: 'low-stock', label: 'Düşük Stok', icon: AlertTriangle, activeClass: 'bg-red-500 text-white' },
+    { key: 'services', label: 'Servis Raporu', icon: Wrench, activeClass: 'bg-cyan-500 text-white' },
   ];
 
   return (
@@ -199,16 +202,15 @@ export default function ReportsPage() {
 
         {/* Tab butonları */}
         <div className="flex flex-wrap gap-1 border-b border-gray-200 mb-4">
-          {tabs.map(({ key, label, icon: Icon, color }) => (
+          {tabs.map(({ key, label, icon: Icon, activeClass }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition ${
                 activeTab === key
-                  ? `bg-${color}-500 text-white`
+                  ? activeClass
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
-              style={activeTab === key ? { backgroundColor: `var(--color-${color}, '')` } : undefined}
             >
               <Icon size={14} /> {label}
             </button>
@@ -251,6 +253,28 @@ export default function ReportsPage() {
                 </div>
                 <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.creditTotal)}</p>
                 <p className="text-xs opacity-70 mt-1">{dailyClosing.creditCount} işlem</p>
+              </div>
+            </div>
+
+            {/* Servis + Toplam Ciro */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl p-4 text-white">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wrench size={16} className="opacity-80" />
+                  <span className="text-xs font-semibold uppercase opacity-80">Servis Geliri (Teslim Edilen)</span>
+                </div>
+                <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.serviceRevenue)}</p>
+                <p className="text-xs opacity-70 mt-1">{dailyClosing.serviceCount} servis kaydı</p>
+              </div>
+              <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-4 text-white">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign size={16} className="opacity-80" />
+                  <span className="text-xs font-semibold uppercase opacity-80">Toplam Günlük Gelir (Satış + Servis)</span>
+                </div>
+                <p className="text-2xl font-black tabular-nums">₺{fmt(dailyClosing.combinedTotal)}</p>
+                <p className="text-xs opacity-70 mt-1">
+                  Satış ₺{fmt(dailyClosing.grandTotal)} · Servis ₺{fmt(dailyClosing.serviceRevenue)}
+                </p>
               </div>
             </div>
 

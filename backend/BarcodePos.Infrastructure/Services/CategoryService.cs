@@ -20,7 +20,7 @@ public class CategoryService : ICategoryService
     {
         var categories = await _context.Categories
             .AsNoTracking()
-            .Where(c => c.StoreId == storeId)
+            .Where(c => c.StoreId == storeId && c.IsActive)
             .OrderBy(c => c.Name)
             .Select(c => new CategoryDto
             {
@@ -39,7 +39,7 @@ public class CategoryService : ICategoryService
     {
         var category = await _context.Categories
             .AsNoTracking()
-            .Where(c => c.Id == id && c.StoreId == storeId)
+            .Where(c => c.Id == id && c.StoreId == storeId && c.IsActive)
             .Select(c => new CategoryDto
             {
                 Id = c.Id,

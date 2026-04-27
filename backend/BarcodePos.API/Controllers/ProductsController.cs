@@ -134,7 +134,7 @@ public class ProductsController : ControllerBase
         if (!validation.IsValid)
             return BadRequest(new { success = false, message = "Doğrulama hatası.", errors = validation.Errors.Select(e => e.ErrorMessage) });
 
-        var result = await _productService.UpdateAsync(id, request, _currentUser.StoreId);
+        var result = await _productService.UpdateAsync(id, request, _currentUser.StoreId, _currentUser.UserId);
         if (!result.Success)
             return result.Message!.Contains("bulunamadı") ? NotFound(new { success = false, message = result.Message }) : Conflict(new { success = false, message = result.Message });
         return Ok(result);
