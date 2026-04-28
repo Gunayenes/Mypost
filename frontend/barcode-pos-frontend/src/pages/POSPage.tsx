@@ -364,74 +364,10 @@ export default function POSPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)] -m-6">
-      {/* ═══ ÜST BAR — Barkod + Tutar Göstergeleri ═══ */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
-        {/* Barkod arama satırı */}
-        <form onSubmit={handleFormSubmit} className="flex items-center gap-2 mb-3">
-          <div className="relative flex-1 min-w-0">
-            <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-            <input
-              ref={inputRef}
-              type="text"
-              value={barcode}
-              onChange={handleBarcodeChange}
-              placeholder="Barkod veya ürün adı..."
-              className="w-full pl-10 pr-4 py-3 border-2 border-blue-400 rounded-lg focus:border-blue-600 outline-none text-base font-medium"
-              autoComplete="off"
-            />
-          </div>
-          <button type="submit" title="Ara" className="flex items-center justify-center gap-1.5 px-3 xl:px-5 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition shrink-0">
-            <Search size={18} /> <span className="hidden xl:inline">Ara</span>
-          </button>
-          <button
-            type="button"
-            title="Fiyat Gör"
-            onClick={async () => {
-              if (!barcode.trim()) { setError('Barkod giriniz.'); return; }
-              try {
-                const { data: res } = await productsApi.getByBarcode(barcode.trim());
-                if (res.success && res.data) {
-                  setError('');
-                  setPriceView({ name: res.data.name, price: res.data.salePrice, tax: res.data.taxRate, barcode: res.data.barcode });
-                } else { setError('Ürün bulunamadı.'); }
-              } catch { setError('Ürün bulunamadı.'); }
-            }}
-            className="flex items-center justify-center gap-1.5 px-3 xl:px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition shrink-0"
-          >
-            <Tag size={18} /> <span className="hidden xl:inline">Fiyat Gör</span>
-          </button>
-          <button
-            type="button"
-            title="Yazdır"
-            onClick={printReceipt}
-            className="flex items-center justify-center gap-1.5 px-3 xl:px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition shrink-0"
-          >
-            <Printer size={18} /> <span className="hidden xl:inline">Yazdır</span>
-          </button>
-        </form>
-
-        {/* Tutar + Para Üstü (Para Üstü sadece Parçalı'da fazla ödeme olduğunda anlamlı) */}
-        <div className="grid grid-cols-2 gap-2 xl:gap-3">
-          <div className="border-2 border-red-300 rounded-lg p-2 xl:p-3 bg-red-50/50">
-            <span className="text-[10px] xl:text-xs font-semibold text-red-500 uppercase tracking-wide">Tutar</span>
-            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-red-600 tabular-nums">
-              ₺{grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          <div className="border-2 border-green-300 rounded-lg p-2 xl:p-3 bg-green-50/40">
-            <span className="text-[10px] xl:text-xs font-semibold text-green-700 uppercase tracking-wide">Para Üstü</span>
-            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-green-700 tabular-nums">
-              ₺{(paymentType === 'Parcali' ? Math.max(0, splitCash + splitCard - grandTotal) : 0)
-                .toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Arama sonuçları overlay */}
+    <div className="flex h-[calc(100vh-5rem)] -m-6">
+      {/* Arama sonuçları overlay (sol panele yapışık) */}
       {searchResults.length > 0 && (
-        <div className="absolute top-32 left-4 right-4 z-40 bg-white border-2 border-blue-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+        <div className="absolute top-32 left-4 right-[18rem] xl:right-[19rem] 2xl:right-[21rem] z-40 bg-white border-2 border-blue-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
           <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b">
             <span className="text-sm font-semibold text-blue-700">Arama Sonuçları ({searchResults.length})</span>
             <button onClick={() => setSearchResults([])} className="p-1 hover:bg-blue-100 rounded"><X size={16} /></button>
@@ -452,10 +388,73 @@ export default function POSPage() {
         </div>
       )}
 
-      {/* ═══ ANA İÇERİK — Sol: Ürün Tablosu / Sağ: Ödeme Paneli ═══ */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ─── SOL PANEL: Üst bar + Ürün Listesi ─── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* ═══ ÜST BAR — Barkod + Tutar Göstergeleri (sadece sol panelin üstü) ═══ */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3">
+          {/* Barkod arama satırı */}
+          <form onSubmit={handleFormSubmit} className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1 min-w-0">
+              <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+              <input
+                ref={inputRef}
+                type="text"
+                value={barcode}
+                onChange={handleBarcodeChange}
+                placeholder="Barkod veya ürün adı..."
+                className="w-full pl-10 pr-4 py-3 border-2 border-blue-400 rounded-lg focus:border-blue-600 outline-none text-base font-medium"
+                autoComplete="off"
+              />
+            </div>
+            <button type="submit" title="Ara" className="flex items-center justify-center gap-1.5 px-3 lg:px-4 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition shrink-0">
+              <Search size={18} /> <span className="hidden lg:inline">Ara</span>
+            </button>
+            <button
+              type="button"
+              title="Fiyat Gör"
+              onClick={async () => {
+                if (!barcode.trim()) { setError('Barkod giriniz.'); return; }
+                try {
+                  const { data: res } = await productsApi.getByBarcode(barcode.trim());
+                  if (res.success && res.data) {
+                    setError('');
+                    setPriceView({ name: res.data.name, price: res.data.salePrice, tax: res.data.taxRate, barcode: res.data.barcode });
+                  } else { setError('Ürün bulunamadı.'); }
+                } catch { setError('Ürün bulunamadı.'); }
+              }}
+              className="flex items-center justify-center gap-1.5 px-3 lg:px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition shrink-0"
+            >
+              <Tag size={18} /> <span className="hidden lg:inline">Fiyat Gör</span>
+            </button>
+            <button
+              type="button"
+              title="Yazdır"
+              onClick={printReceipt}
+              className="flex items-center justify-center gap-1.5 px-3 lg:px-4 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition shrink-0"
+            >
+              <Printer size={18} /> <span className="hidden lg:inline">Yazdır</span>
+            </button>
+          </form>
 
-        {/* ─── SOL PANEL: Ürün Listesi ─── */}
+          {/* Tutar + Para Üstü */}
+          <div className="grid grid-cols-2 gap-2 xl:gap-3">
+            <div className="border-2 border-red-300 rounded-lg p-2 xl:p-3 bg-red-50/50">
+              <span className="text-[10px] xl:text-xs font-semibold text-red-500 uppercase tracking-wide">Tutar</span>
+              <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-red-600 tabular-nums">
+                ₺{grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="border-2 border-green-300 rounded-lg p-2 xl:p-3 bg-green-50/40">
+              <span className="text-[10px] xl:text-xs font-semibold text-green-700 uppercase tracking-wide">Para Üstü</span>
+              <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-green-700 tabular-nums">
+                ₺{(paymentType === 'Parcali' ? Math.max(0, splitCash + splitCard - grandTotal) : 0)
+                  .toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Ürün Listesi ─── */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Ürün header */}
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
@@ -572,8 +571,9 @@ export default function POSPage() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* ─── SAĞ PANEL: Ödeme ─── */}
+      {/* ─── SAĞ PANEL: Ödeme ─── */}
         <div className="w-64 xl:w-72 2xl:w-80 border-l border-gray-200 bg-white flex flex-col shrink-0">
           {/* Tarih/Saat */}
           <div className="px-3 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
@@ -861,7 +861,6 @@ export default function POSPage() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Fiyat Gör Overlay */}
       {priceView && (
