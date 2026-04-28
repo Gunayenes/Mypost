@@ -13,12 +13,24 @@ export default function SiteAdminLoginPage() {
   const login = useSiteAdminAuthStore((s) => s.login);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+
+    // Browser autofill onChange tetiklemediğinde React state boş kalır.
+    // Form'dan canlı değerleri oku.
+    const fd = new FormData(e.currentTarget);
+    const em = ((fd.get('email') as string) || email || '').trim();
+    const pw = (fd.get('password') as string) || password || '';
+
+    if (!em || !pw) {
+      setError('E-posta ve şifre boş olamaz.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: res } = await siteAdminApi.login({ email, password });
+      const { data: res } = await siteAdminApi.login({ email: em, password: pw });
       if (res.success && res.data) {
         login(res.data.token, res.data.email);
         navigate('/site-admin');
@@ -54,6 +66,8 @@ export default function SiteAdminLoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
             <input
               type="email"
+              name="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition"
@@ -67,6 +81,8 @@ export default function SiteAdminLoginPage() {
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition pr-10"

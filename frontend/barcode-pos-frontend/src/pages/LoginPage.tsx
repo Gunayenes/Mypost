@@ -15,12 +15,24 @@ export default function LoginPage() {
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+
+    // Browser autofill (Chrome / 1Password / LastPass) bazen onChange tetiklemez,
+    // React state boş kalır. Form'dan canlı değerleri oku.
+    const fd = new FormData(e.currentTarget);
+    const u = ((fd.get('username') as string) || username || '').trim();
+    const p = (fd.get('password') as string) || password || '';
+
+    if (!u || !p) {
+      setError('Kullanıcı adı ve şifre boş olamaz.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: res } = await authApi.login({ username, password });
+      const { data: res } = await authApi.login({ username: u, password: p });
       if (res.success && res.data) {
         login(res.data);
         navigate(isElectron() ? '/' : '/app');
@@ -83,6 +95,8 @@ export default function LoginPage() {
             </label>
             <input
               type="text"
+              name="username"
+              autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
@@ -98,6 +112,8 @@ export default function LoginPage() {
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition pr-10"
