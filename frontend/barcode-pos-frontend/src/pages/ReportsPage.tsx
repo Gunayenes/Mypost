@@ -164,7 +164,7 @@ export default function ReportsPage() {
     }
   };
 
-  const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const tabs: { key: TabKey; label: string; icon: typeof BarChart3; activeClass: string }[] = [
     { key: 'daily-closing', label: 'Günlük Rapor', icon: Calendar, activeClass: 'bg-emerald-500 text-white' },
