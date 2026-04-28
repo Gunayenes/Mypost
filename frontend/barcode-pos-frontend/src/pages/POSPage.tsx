@@ -273,13 +273,23 @@ export default function POSPage() {
       } else {
         setError(res.message ?? 'Satış başarısız.');
       }
-    } catch {
-      setError('Satış işlemi sırasında hata oluştu.');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string; errors?: string[] } } };
+      const apiMsg = e?.response?.data?.message;
+      const apiErrors = e?.response?.data?.errors;
+      const detail = apiErrors?.length ? ` (${apiErrors.join(', ')})` : '';
+      setError(apiMsg ? `${apiMsg}${detail}` : 'Satış işlemi sırasında hata oluştu.');
+      // eslint-disable-next-line no-console
+      console.error('[Satış hatası]', err);
     } finally {
       setProcessing(false);
       inputRef.current?.focus();
     }
   };
+
+  // F12 (Satış Tamamla) handler'ının her zaman en güncel state'i görmesi için ref pattern
+  const handleCompleteSaleRef = useRef(handleCompleteSale);
+  handleCompleteSaleRef.current = handleCompleteSale;
 
   // Klavye kısayolları
   useEffect(() => {
@@ -288,12 +298,13 @@ export default function POSPage() {
       if (e.key === 'F9') { e.preventDefault(); setPaymentType('Kart'); }
       if (e.key === 'F10') { e.preventDefault(); setPaymentType('Veresiye'); }
       if (e.key === 'F11') { e.preventDefault(); setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }
-      if (e.key === 'F12') { e.preventDefault(); handleCompleteSale(); }
+      if (e.key === 'F12') { e.preventDefault(); handleCompleteSaleRef.current(); }
       if (e.key === 'Escape') { clearCart(); handleClearCustomer(); inputRef.current?.focus(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [items, paymentType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const grandTotal = getRoundedGrandTotal();
 
@@ -754,18 +765,19 @@ export default function POSPage() {
             </div>
           )}
 
-          {/* Bildirimler */}
+          </div> {/* /scrollable üst */}
+
+          {/* Bildirimler — sticky bölgenin üstünde, her zaman görünür */}
           {error && (
-            <div className="mx-3 mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 font-medium">
-              {error}
+            <div className="mx-2 mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 font-bold shrink-0">
+              ⚠ {error}
             </div>
           )}
           {successMsg && (
-            <div className="mx-3 mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700 font-medium flex items-center gap-1">
+            <div className="mx-2 mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700 font-bold flex items-center gap-1 shrink-0">
               <CheckCircle size={14} /> {successMsg}
             </div>
           )}
-          </div> {/* /scrollable üst */}
 
           {/* Alt toplam — sticky, her zaman görünür */}
           <div className="border-t border-gray-200 shrink-0">
