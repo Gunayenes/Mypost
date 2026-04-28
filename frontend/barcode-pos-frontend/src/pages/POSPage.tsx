@@ -40,6 +40,7 @@ export default function POSPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastKeyTimeRef = useRef<number>(0);
+  const splitDetailRef = useRef<HTMLDivElement>(null);
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerResults, setCustomerResults] = useState<Customer[]>([]);
@@ -88,6 +89,15 @@ export default function POSPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Parçalı seçildiğinde detay kutusunu otomatik görünür yap (yer dar olduğunda scroll'la getir)
+  useEffect(() => {
+    if (paymentType === 'Parcali') {
+      requestAnimationFrame(() => {
+        splitDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+  }, [paymentType]);
 
   // Kategori ürünlerini yükle
   const loadCategoryProducts = useCallback(async (categoryId: number) => {
@@ -578,19 +588,19 @@ export default function POSPage() {
           {/* Üst kısım: scroll edilebilir (saat, ödeme tipi, müşteri, bildirimler) */}
           <div className="flex-1 overflow-y-auto min-h-0">
           {/* Tarih/Saat */}
-          <div className="px-3 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-            <Clock size={16} />
+          <div className="px-3 py-1.5 border-b border-gray-200 bg-gray-50 flex items-center gap-2 text-xs text-gray-500">
+            <Clock size={14} />
             <span className="tabular-nums font-bold">
               {now.toLocaleDateString('tr-TR')} {now.toLocaleTimeString('tr-TR')}
             </span>
           </div>
 
           {/* Ödeme tipi butonları */}
-          <div className="px-3 py-3 border-b border-gray-200 space-y-2">
+          <div className="px-2 py-2 border-b border-gray-200 space-y-1.5">
             <div className="grid grid-cols-2 2xl:grid-cols-4 gap-1.5">
               <button
                 onClick={() => setPaymentType('Nakit')}
-                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Nakit'
                     ? 'border-green-500 bg-green-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
@@ -602,7 +612,7 @@ export default function POSPage() {
               </button>
               <button
                 onClick={() => setPaymentType('Kart')}
-                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Kart'
                     ? 'border-blue-500 bg-blue-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
@@ -614,7 +624,7 @@ export default function POSPage() {
               </button>
               <button
                 onClick={() => setPaymentType('Veresiye')}
-                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Veresiye'
                     ? 'border-orange-500 bg-orange-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50'
@@ -626,7 +636,7 @@ export default function POSPage() {
               </button>
               <button
                 onClick={() => { setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }}
-                className={`flex flex-col items-center gap-0.5 py-2.5 rounded-lg text-[11px] font-bold transition border-2 ${
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Parcali'
                     ? 'border-purple-500 bg-purple-500 text-white'
                     : 'border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50'
@@ -640,7 +650,7 @@ export default function POSPage() {
 
             {/* Parçalı ödeme detayları */}
             {paymentType === 'Parcali' && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 space-y-2">
+              <div ref={splitDetailRef} className="bg-purple-50 border border-purple-200 rounded-lg p-2 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Banknote size={14} className="text-green-600 shrink-0" />
                   <span className="text-xs font-semibold text-gray-600 w-14">Nakit</span>
@@ -759,7 +769,7 @@ export default function POSPage() {
 
           {/* Alt toplam — sticky, her zaman görünür */}
           <div className="border-t border-gray-200 shrink-0">
-            <div className="px-3 py-3 space-y-1.5 text-sm">
+            <div className="px-3 py-2 space-y-1 text-sm">
               <div className="flex justify-between text-gray-500">
                 <span className="font-medium">Ara Toplam</span>
                 <span className="tabular-nums font-bold text-gray-800">₺{getSubTotal().toFixed(2)}</span>
@@ -833,31 +843,31 @@ export default function POSPage() {
               </div>
             )}
 
-            <div className="px-4 py-4 bg-slate-800 flex justify-between items-center">
-              <span className="text-white text-lg font-black">TOPLAM</span>
-              <span className="text-white text-3xl font-black tabular-nums">
+            <div className="px-3 py-2.5 bg-slate-800 flex justify-between items-center">
+              <span className="text-white text-base font-black">TOPLAM</span>
+              <span className="text-white text-2xl font-black tabular-nums">
                 ₺{grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
               </span>
             </div>
 
             {/* Satış tamamla / temizle */}
-            <div className="p-3 space-y-2">
+            <div className="p-2 space-y-1.5">
               <button
                 onClick={handleCompleteSale}
                 disabled={items.length === 0 || processing}
-                className="w-full py-4 bg-green-600 text-white rounded-lg font-black text-base hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-green-600 text-white rounded-lg font-black text-sm hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {processing ? (
-                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
-                  <CheckCircle size={22} />
+                  <CheckCircle size={18} />
                 )}
                 {processing ? 'İşleniyor...' : 'SATIŞ TAMAMLA (F12)'}
               </button>
               <button
                 onClick={() => { clearCart(); handleClearCustomer(); inputRef.current?.focus(); }}
                 disabled={items.length === 0}
-                className="w-full py-2.5 border border-gray-300 text-gray-500 rounded-lg text-sm font-medium hover:bg-gray-50 transition disabled:opacity-40"
+                className="w-full py-1.5 border border-gray-300 text-gray-500 rounded-lg text-xs font-medium hover:bg-gray-50 transition disabled:opacity-40"
               >
                 Sepeti Temizle (ESC)
               </button>
