@@ -53,12 +53,10 @@ export default function POSPage() {
     items,
     customerId,
     paymentType,
-    paidAmount,
     roundingAmount,
     discountTotal,
     setCustomerId,
     setPaymentType,
-    setPaidAmount,
     setRoundingAmount,
     setDiscountTotal,
     addProduct,
@@ -69,7 +67,6 @@ export default function POSPage() {
     getTaxTotal,
     getGrandTotal,
     getRoundedGrandTotal,
-    getChange,
     getItemCount,
   } = useCartStore();
 
@@ -215,11 +212,22 @@ export default function POSPage() {
     if (items.length === 0) return;
     const total = getRoundedGrandTotal();
 
-    // Nakit/Kart ödemede ödenen tutar kontrolü
-    if (paymentType !== 'Veresiye' && paidAmount < total) {
-      setError('Ödenen tutar yetersiz.');
-      setTimeout(() => setError(''), 3000);
-      return;
+    // Ödenen tutar ödeme tipine göre otomatik:
+    //   Nakit/Kart → toplam tutarın tamamı
+    //   Veresiye   → 0 (müşteri sonra ödeyecek)
+    //   Parçalı    → splitCash + splitCard
+    let computedPaid: number;
+    if (paymentType === 'Veresiye') {
+      computedPaid = 0;
+    } else if (paymentType === 'Parcali') {
+      computedPaid = splitCash + splitCard;
+      if (computedPaid < total) {
+        setError(`Parçalı ödeme toplamı yetersiz (₺${computedPaid.toFixed(2)} / ₺${total.toFixed(2)}).`);
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+    } else {
+      computedPaid = total;
     }
 
     // Veresiye ise müşteri zorunlu
@@ -235,7 +243,7 @@ export default function POSPage() {
       const { data: res } = await salesApi.create({
         customerId,
         paymentType,
-        paidAmount: paymentType === 'Parcali' ? splitCash + splitCard : paidAmount,
+        paidAmount: computedPaid,
         paidCash: paymentType === 'Parcali' ? splitCash : 0,
         paidCard: paymentType === 'Parcali' ? splitCard : 0,
         discountTotal: roundingAmount + discountTotal,
@@ -338,10 +346,10 @@ export default function POSPage() {
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
         <span>Ödeme: ${paymentType === 'Parcali' ? 'Parçalı' : paymentType === 'Kart' ? 'Kredi Kartı' : paymentType}</span>
-        <span>Ödenen: ${paidAmount.toFixed(2)} ₺</span>
+        <span>Ödenen: ${(paymentType === 'Veresiye' ? 0 : paymentType === 'Parcali' ? splitCash + splitCard : grandTotal).toFixed(2)} ₺</span>
       </div>
       ${paymentType === 'Parcali' ? `<div style="font-size:11px;">Nakit: ${splitCash.toFixed(2)} ₺ | Kart: ${splitCard.toFixed(2)} ₺</div>` : ''}
-      ${paidAmount > grandTotal ? `<div style="font-size:12px;"><b>Para Üstü: ${(paidAmount - grandTotal).toFixed(2)} ₺</b></div>` : ''}
+      ${paymentType === 'Parcali' && (splitCash + splitCard) > grandTotal ? `<div style="font-size:12px;"><b>Para Üstü: ${((splitCash + splitCard) - grandTotal).toFixed(2)} ₺</b></div>` : ''}
       <div class="line"></div>
       <div class="center" style="font-size:10px;margin-top:6px;">Bizi tercih ettiğiniz için teşekkürler!</div>
       <div class="center" style="font-size:9px;color:#888;margin-top:2px;">Cari Soft POS</div>
@@ -403,24 +411,19 @@ export default function POSPage() {
           </button>
         </form>
 
-        {/* Ödenen / Tutar / Para Üstü göstergeleri */}
-        <div className="grid grid-cols-3 gap-2 xl:gap-3">
-          <div className="border-2 border-gray-300 rounded-lg p-2 xl:p-3">
-            <span className="text-[10px] xl:text-xs font-semibold text-gray-500 uppercase tracking-wide">Ödenen</span>
-            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-gray-900 tabular-nums">
-              ₺{paidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
+        {/* Tutar + Para Üstü (Para Üstü sadece Parçalı'da fazla ödeme olduğunda anlamlı) */}
+        <div className="grid grid-cols-2 gap-2 xl:gap-3">
           <div className="border-2 border-red-300 rounded-lg p-2 xl:p-3 bg-red-50/50">
             <span className="text-[10px] xl:text-xs font-semibold text-red-500 uppercase tracking-wide">Tutar</span>
             <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-red-600 tabular-nums">
               ₺{grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="border-2 border-gray-300 rounded-lg p-2 xl:p-3">
-            <span className="text-[10px] xl:text-xs font-semibold text-gray-500 uppercase tracking-wide">Para Üstü</span>
-            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-gray-900 tabular-nums">
-              ₺{getChange().toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+          <div className="border-2 border-green-300 rounded-lg p-2 xl:p-3 bg-green-50/40">
+            <span className="text-[10px] xl:text-xs font-semibold text-green-700 uppercase tracking-wide">Para Üstü</span>
+            <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-green-700 tabular-nums">
+              ₺{(paymentType === 'Parcali' ? Math.max(0, splitCash + splitCard - grandTotal) : 0)
+                .toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -580,36 +583,6 @@ export default function POSPage() {
             </span>
           </div>
 
-          {/* Ödenen Tutar */}
-          <div className="px-3 py-3 border-b border-gray-200">
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Ödenen Tutar</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₺</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={paidAmount || ''}
-                  onChange={(e) => setPaidAmount(Math.max(0, +e.target.value || 0))}
-                  placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-3 border-2 border-gray-300 rounded-lg text-lg font-black text-right tabular-nums focus:border-blue-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-              <button
-                onClick={() => setPaidAmount(grandTotal)}
-                className="px-5 py-3 bg-blue-600 text-white rounded-lg text-sm font-black hover:bg-blue-700 transition shrink-0"
-              >
-                Tam
-              </button>
-            </div>
-            {paidAmount > 0 && paidAmount >= grandTotal && grandTotal > 0 && (
-              <div className="mt-1.5 text-right text-sm font-bold text-green-600">
-                Para Üstü: ₺{(paidAmount - grandTotal).toFixed(2)}
-              </div>
-            )}
-          </div>
-
           {/* Ödeme tipi butonları */}
           <div className="px-3 py-3 border-b border-gray-200 space-y-2">
             <div className="grid grid-cols-2 2xl:grid-cols-4 gap-1.5">
@@ -679,7 +652,6 @@ export default function POSPage() {
                       onChange={(e) => {
                         const cash = Math.max(0, +e.target.value || 0);
                         setSplitCash(cash);
-                        setPaidAmount(cash + splitCard);
                       }}
                       placeholder="0.00"
                       className="w-full pl-6 pr-2 py-2 border border-purple-300 rounded-lg text-sm font-bold text-right focus:border-purple-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -699,7 +671,6 @@ export default function POSPage() {
                       onChange={(e) => {
                         const card = Math.max(0, +e.target.value || 0);
                         setSplitCard(card);
-                        setPaidAmount(splitCash + card);
                       }}
                       placeholder="0.00"
                       className="w-full pl-6 pr-2 py-2 border border-purple-300 rounded-lg text-sm font-bold text-right focus:border-purple-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
