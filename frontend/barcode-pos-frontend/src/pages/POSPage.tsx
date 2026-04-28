@@ -574,7 +574,9 @@ export default function POSPage() {
       </div>
 
       {/* ─── SAĞ PANEL: Ödeme ─── */}
-        <div className="w-64 xl:w-72 2xl:w-80 border-l border-gray-200 bg-white flex flex-col shrink-0">
+        <div className="w-64 xl:w-72 2xl:w-80 border-l border-gray-200 bg-white flex flex-col shrink-0 min-h-0">
+          {/* Üst kısım: scroll edilebilir (saat, ödeme tipi, müşteri, bildirimler) */}
+          <div className="flex-1 overflow-y-auto min-h-0">
           {/* Tarih/Saat */}
           <div className="px-3 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
             <Clock size={16} />
@@ -753,9 +755,10 @@ export default function POSPage() {
               <CheckCircle size={14} /> {successMsg}
             </div>
           )}
+          </div> {/* /scrollable üst */}
 
-          {/* Alt toplam */}
-          <div className="mt-auto border-t border-gray-200">
+          {/* Alt toplam — sticky, her zaman görünür */}
+          <div className="border-t border-gray-200 shrink-0">
             <div className="px-3 py-3 space-y-1.5 text-sm">
               <div className="flex justify-between text-gray-500">
                 <span className="font-medium">Ara Toplam</span>
