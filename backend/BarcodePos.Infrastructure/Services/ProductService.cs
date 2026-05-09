@@ -165,31 +165,40 @@ public class ProductService : IProductService
         // Format: 20 + storeId(2) + sıra(8) + kontrol(1) = 13 haneli
         var storePrefix = $"20{storeId % 100:D2}";
 
-        // Mevcut en yüksek dahili barkodu bul
-        var lastBarcode = await _context.Products
+        // Mevcut prefix'le başlayan tüm barkodları al, sequence kısmını sayı olarak parse edip max'ı bul
+        // (string OrderByDesc karışık uzunluklu eski barkodlarda hatalı sıralama yapabiliyor)
+        var existingBarcodes = await _context.Products
             .Where(p => p.StoreId == storeId && p.Barcode.StartsWith(storePrefix))
-            .OrderByDescending(p => p.Barcode)
             .Select(p => p.Barcode)
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        long nextSequence = 1;
-        if (lastBarcode != null && lastBarcode.Length == 13
-            && long.TryParse(lastBarcode.Substring(4, 8), out var lastSeq))
+        long maxSequence = 0;
+        foreach (var bc in existingBarcodes)
         {
-            nextSequence = lastSeq + 1;
+            // Hem 12 (eski format: prefix + 8 hane) hem 13 (yeni format: prefix + 8 hane + check) destekle
+            if (bc.Length >= 12 && long.TryParse(bc.Substring(4, 8), out var seq))
+            {
+                if (seq > maxSequence) maxSequence = seq;
+            }
         }
 
-        var barcodeWithoutCheck = $"{storePrefix}{nextSequence:D8}";
-        var checkDigit = CalculateEan13CheckDigit(barcodeWithoutCheck);
-        var barcode = $"{barcodeWithoutCheck}{checkDigit}";
+        var existingSet = existingBarcodes.ToHashSet();
 
-        // Benzersizlik kontrolü
-        var exists = await _context.Products
-            .AnyAsync(p => p.StoreId == storeId && p.Barcode == barcode);
-        if (exists)
-            return Result<string>.Fail("Barkod üretilirken çakışma oluştu, tekrar deneyin.");
+        // Sıradakiyi üret; nadir de olsa çakışırsa ileri kayarak tekrar dene (max 100)
+        for (var i = 1; i <= 100; i++)
+        {
+            var nextSequence = maxSequence + i;
+            if (nextSequence > 99_999_999) break; // 8 haneli sequence sınırı
 
-        return Result<string>.Ok(barcode);
+            var barcodeWithoutCheck = $"{storePrefix}{nextSequence:D8}";
+            var checkDigit = CalculateEan13CheckDigit(barcodeWithoutCheck);
+            var barcode = $"{barcodeWithoutCheck}{checkDigit}";
+
+            if (!existingSet.Contains(barcode))
+                return Result<string>.Ok(barcode);
+        }
+
+        return Result<string>.Fail("Barkod üretilemedi: Tüm dahili barkod havuzu dolu görünüyor.");
     }
 
     private static int CalculateEan13CheckDigit(string code12)
