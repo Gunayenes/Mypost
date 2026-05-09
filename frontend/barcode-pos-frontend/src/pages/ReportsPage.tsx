@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { reportsApi } from '@/api/dashboard';
 import { servicesApi } from '@/api/services';
-import type { ServiceListItem } from '@/types';
+import { productsApi } from '@/api/products';
+import type { ServiceListItem, Product } from '@/types';
 import {
   BarChart3, Download, TrendingUp, TrendingDown, DollarSign, Percent,
   ShoppingCart, Package, AlertTriangle, CreditCard, Loader2,
-  Calendar, Banknote, Wallet, Clock, Users, Wrench,
+  Calendar, Banknote, Wallet, Clock, Users, Wrench, X,
 } from 'lucide-react';
 
 // ── Tipler ──
@@ -104,6 +105,24 @@ export default function ReportsPage() {
 
   const [profitSubTab, setProfitSubTab] = useState<'summary' | 'daily' | 'category' | 'products'>('summary');
   const [dailySubTab, setDailySubTab] = useState<'summary' | 'hourly' | 'cashier' | 'products'>('summary');
+
+  // Ürün detay modalı (Günün Ürünleri tablosundan tıklanan ürün)
+  const [productDetail, setProductDetail] = useState<Product | null>(null);
+  const [productDetailLoading, setProductDetailLoading] = useState(false);
+
+  const openProductDetail = async (productId: number) => {
+    setProductDetailLoading(true);
+    setProductDetail(null);
+    try {
+      const { data: res } = await productsApi.getById(productId);
+      if (res.success && res.data) setProductDetail(res.data);
+      else toast('error', res.message ?? 'Ürün bulunamadı.');
+    } catch {
+      toast('error', 'Ürün bilgisi yüklenemedi.');
+    } finally {
+      setProductDetailLoading(false);
+    }
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -472,10 +491,15 @@ export default function ReportsPage() {
                   </thead>
                   <tbody>
                     {dailyClosing.topProducts.map((p, i) => (
-                      <tr key={p.productId} className="border-b border-gray-100">
+                      <tr
+                        key={p.productId}
+                        onClick={() => openProductDetail(p.productId)}
+                        className="border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition"
+                        title="Ürün detayını gör"
+                      >
                         <td className="px-4 py-2 text-gray-400 font-mono">{i + 1}</td>
                         <td className="px-4 py-2">
-                          <div className="font-medium">{p.productName}</div>
+                          <div className="font-medium text-blue-700 hover:underline">{p.productName}</div>
                           <div className="text-xs text-gray-400">{p.barcode}</div>
                         </td>
                         <td className="px-4 py-2 text-gray-600">{p.categoryName}</td>
@@ -897,6 +921,166 @@ export default function ReportsPage() {
           <p className="text-center text-gray-400 py-8">Tarih aralığı seçip "Rapor Getir" butonuna basın.</p>
         )}
       </div>
+
+      {/* ─── Ürün Detay Modalı ─── */}
+      {(productDetail || productDetailLoading) && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => { setProductDetail(null); setProductDetailLoading(false); }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {productDetailLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 size={32} className="animate-spin text-primary" />
+              </div>
+            ) : productDetail && (
+              <>
+                {/* Header */}
+                <div className="flex items-start justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+                  <div className="min-w-0">
+                    <p className="text-xs font-mono text-gray-400 mb-1">{productDetail.barcode}</p>
+                    <h2 className="text-2xl font-black text-gray-900 break-words">{productDetail.name}</h2>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs px-2 py-0.5 bg-white border border-gray-300 text-gray-700 rounded-full">
+                        {productDetail.categoryName}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        productDetail.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {productDetail.isActive ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    title="Kapat"
+                    aria-label="Kapat"
+                    onClick={() => setProductDetail(null)}
+                    className="p-2 hover:bg-white/60 rounded-lg text-gray-500 hover:text-gray-800 transition"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* İçerik */}
+                <div className="p-6 space-y-4">
+                  {/* Fiyat kartları (TL) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">Alış Fiyatı (TL)</p>
+                      <p className="text-2xl font-black text-red-800 tabular-nums">₺{fmt(productDetail.costPrice)}</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Satış Fiyatı (TL)</p>
+                      <p className="text-2xl font-black text-green-800 tabular-nums">₺{fmt(productDetail.salePrice)}</p>
+                    </div>
+                  </div>
+
+                  {/* USD bilgisi (sadece USD'li ürünlerde) */}
+                  {(productDetail.salePriceUsd ?? 0) > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <DollarSign size={16} className="text-amber-700" />
+                        <span className="text-sm font-bold text-amber-900">USD Fiyatlama</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-amber-700 font-semibold">Alış (USD)</p>
+                          <p className="font-black text-amber-900 tabular-nums">${fmt(productDetail.costPriceUsd ?? 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-amber-700 font-semibold">Satış (USD)</p>
+                          <p className="font-black text-amber-900 tabular-nums">${fmt(productDetail.salePriceUsd ?? 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-amber-700 font-semibold">Kayıtlı Kur</p>
+                          <p className="font-black text-amber-900 tabular-nums">₺{fmt(productDetail.exchangeRate ?? 0)}</p>
+                        </div>
+                      </div>
+                      {(productDetail.currentExchangeRate ?? 0) > 0 && productDetail.currentExchangeRate !== productDetail.exchangeRate && (
+                        <div className="pt-2 border-t border-amber-300 flex items-center justify-between text-xs">
+                          <span className="text-amber-700">Güncel kur ({fmt(productDetail.currentExchangeRate)} ₺):</span>
+                          <span className="font-bold text-amber-900">
+                            Alış ₺{fmt(productDetail.currentCostPrice ?? 0)} · Satış ₺{fmt(productDetail.currentSalePrice ?? 0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Diğer detaylar */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 font-semibold uppercase">KDV Oranı</p>
+                      <p className="text-lg font-bold text-gray-800 tabular-nums">%{productDetail.taxRate}</p>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 font-semibold uppercase">KDV Dahil Satış</p>
+                      <p className="text-lg font-bold text-gray-800 tabular-nums">₺{fmt(productDetail.salePrice * (1 + productDetail.taxRate / 100))}</p>
+                    </div>
+                    <div className={`border rounded-lg p-3 ${productDetail.stockQuantity <= productDetail.minStockLevel ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+                      <p className={`text-xs font-semibold uppercase ${productDetail.stockQuantity <= productDetail.minStockLevel ? 'text-red-600' : 'text-blue-600'}`}>Stok Adedi</p>
+                      <p className={`text-lg font-bold tabular-nums ${productDetail.stockQuantity <= productDetail.minStockLevel ? 'text-red-700' : 'text-blue-700'}`}>
+                        {productDetail.stockQuantity}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 font-semibold uppercase">Min. Stok</p>
+                      <p className="text-lg font-bold text-gray-800 tabular-nums">{productDetail.minStockLevel}</p>
+                    </div>
+                  </div>
+
+                  {/* Kâr göstergesi */}
+                  <div className={`border rounded-lg p-3 flex items-center justify-between ${
+                    productDetail.salePrice - productDetail.costPrice >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {productDetail.salePrice - productDetail.costPrice >= 0
+                        ? <TrendingUp size={18} className="text-emerald-600" />
+                        : <TrendingDown size={18} className="text-red-600" />}
+                      <span className="text-sm font-semibold text-gray-700">Birim Kâr</span>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-lg font-black tabular-nums ${
+                        productDetail.salePrice - productDetail.costPrice >= 0 ? 'text-emerald-700' : 'text-red-700'
+                      }`}>
+                        ₺{fmt(productDetail.salePrice - productDetail.costPrice)}
+                      </p>
+                      {productDetail.costPrice > 0 && (
+                        <p className="text-xs text-gray-500">
+                          %{((productDetail.salePrice - productDetail.costPrice) / productDetail.costPrice * 100).toFixed(1)} marj
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tarih bilgileri */}
+                  <div className="text-xs text-gray-400 flex justify-between pt-2 border-t border-gray-100">
+                    <span>Oluşturulma: {new Date(productDetail.createdAt).toLocaleDateString('tr-TR')}</span>
+                    {productDetail.updatedAt && (
+                      <span>Güncellenme: {new Date(productDetail.updatedAt).toLocaleDateString('tr-TR')}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end rounded-b-2xl">
+                  <button
+                    type="button"
+                    onClick={() => setProductDetail(null)}
+                    className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
+                  >
+                    Kapat
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
