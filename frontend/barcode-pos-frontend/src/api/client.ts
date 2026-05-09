@@ -1,9 +1,39 @@
 import axios from 'axios';
 
+/**
+ * Bağlantı modu — masaüstü uygulamasında kullanıcı online (cari-soft.com)
+ * veya offline (yerel cihaz) modunu seçebilir. Web'de her zaman göreli /api kullanılır.
+ */
+function resolveBaseUrl(): string {
+  // Build-time ortam değişkeni (web deploy'unda set edilmiş olabilir)
+  const envBase = import.meta.env.VITE_API_BASE_URL;
+  if (envBase) return envBase;
+
+  // Runtime: localStorage'da seçili mod varsa onu kullan (Electron desktop için)
+  try {
+    const mode = localStorage.getItem('connectionMode'); // 'local' | 'remote'
+    if (mode === 'remote') return 'https://cari-soft.com/api';
+    if (mode === 'local') return 'http://localhost:5050/api';
+  } catch { /* localStorage yoksa sessiz geç */ }
+
+  // Varsayılan: göreli — web tarayıcıda aynı sunucuya gider
+  return '/api';
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: resolveBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
 });
+
+/** Çalışma sırasında bağlantı modunu değiştirmek için (sayfa yenileme gerekmez). */
+export function setConnectionMode(mode: 'local' | 'remote') {
+  localStorage.setItem('connectionMode', mode);
+  api.defaults.baseURL = mode === 'remote' ? 'https://cari-soft.com/api' : 'http://localhost:5050/api';
+}
+
+export function getConnectionMode(): 'local' | 'remote' | null {
+  try { return (localStorage.getItem('connectionMode') as 'local' | 'remote' | null); } catch { return null; }
+}
 
 // Duplicate toast engelleme — aynı mesaj 3sn içinde tekrar gösterilmez
 const recentToasts = new Map<string, number>();

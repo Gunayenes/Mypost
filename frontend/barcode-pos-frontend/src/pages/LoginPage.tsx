@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Wifi, WifiOff, Settings, Cloud, Monitor } from 'lucide-react';
 import { isElectron } from '@/utils/platform';
+import { setConnectionMode, getConnectionMode } from '@/api/client';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -12,8 +13,31 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showConnSettings, setShowConnSettings] = useState(false);
+  const [connMode, setConnModeState] = useState<'local' | 'remote'>(() =>
+    (getConnectionMode() ?? (isElectron() ? 'local' : 'remote'))
+  );
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
+
+  // İlk açılışta Electron ortamında mod hiç set edilmemişse 'local' olarak ata
+  useEffect(() => {
+    if (isElectron() && !getConnectionMode()) {
+      setConnectionMode('local');
+    }
+  }, []);
+
+  const switchMode = (mode: 'local' | 'remote') => {
+    setConnectionMode(mode);
+    setConnModeState(mode);
+    setShowConnSettings(false);
+    setError('');
+    // Mod değiştiğinde aktif token başka backend için geçersiz — temizle
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    } catch { /* yok say */ }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,12 +94,40 @@ export default function LoginPage() {
         </Link>
       )}
 
+      {/* Bağlantı modu göstergesi (sadece Electron desktop'ta) */}
+      {isElectron() && (
+        <button
+          type="button"
+          onClick={() => setShowConnSettings(true)}
+          className="absolute top-6 right-6 z-20 flex items-center gap-2 px-3 py-2 bg-white/15 backdrop-blur border border-white/30 rounded-lg text-white hover:bg-white/25 transition text-sm"
+          title="Bağlantı modunu değiştir"
+        >
+          {connMode === 'remote' ? (
+            <>
+              <Wifi size={16} className="text-emerald-300" />
+              <span className="font-medium">Çevrimiçi (cari-soft.com)</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={16} className="text-amber-300" />
+              <span className="font-medium">Çevrimdışı (Bu Bilgisayar)</span>
+            </>
+          )}
+          <Settings size={14} className="opacity-70" />
+        </button>
+      )}
+
       {/* Login card */}
       <div className="relative z-10 w-full max-w-sm bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img src="/carisoftlogo.png" alt="Cari Soft" className="h-20 w-auto object-contain mb-2" />
           <p className="text-sm text-gray-500 mt-1">Akıllı Satış Noktası</p>
+          {isElectron() && (
+            <p className="text-[10px] mt-1 px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">
+              {connMode === 'remote' ? '🟢 Bulut' : '🟠 Yerel cihaz'}
+            </p>
+          )}
         </div>
 
         {error && (
@@ -145,7 +197,8 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        {!isElectron() && (
+        {/* Web ortamında veya Electron + remote modda kayıt linki göster */}
+        {(!isElectron() || connMode === 'remote') && (
           <p className="mt-6 text-center text-sm text-gray-500">
             Hesabınız yok mu?{' '}
             <Link to="/kayit" className="text-primary-600 font-medium hover:underline">
@@ -154,6 +207,83 @@ export default function LoginPage() {
           </p>
         )}
       </div>
+
+      {/* ─── Bağlantı Modu Seçim Modalı (Electron desktop) ─── */}
+      {showConnSettings && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setShowConnSettings(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Bağlantı Modu</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              Uygulamanın hangi veritabanına bağlanacağını seçin.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => switchMode('remote')}
+                className={`w-full text-left p-4 rounded-xl border-2 transition ${
+                  connMode === 'remote'
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <Cloud size={28} className={connMode === 'remote' ? 'text-emerald-600 shrink-0' : 'text-gray-400 shrink-0'} />
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900">🟢 Çevrimiçi — cari-soft.com</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Bulut hesabınızla bağlanır. Verileriniz cari-soft.com sunucusunda
+                      tutulur, başka cihazlardan da erişebilirsiniz.
+                    </p>
+                    <p className="text-[11px] text-emerald-700 font-semibold mt-1.5">İnternet gerektirir.</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchMode('local')}
+                className={`w-full text-left p-4 rounded-xl border-2 transition ${
+                  connMode === 'local'
+                    ? 'border-amber-500 bg-amber-50'
+                    : 'border-gray-200 hover:border-amber-300 hover:bg-amber-50/40'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <Monitor size={28} className={connMode === 'local' ? 'text-amber-600 shrink-0' : 'text-gray-400 shrink-0'} />
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900">🟠 Çevrimdışı — Bu Bilgisayar</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Bu cihazda yerel olarak çalışır. Veriler sadece bu bilgisayarda
+                      tutulur, internet kesik olsa bile çalışır.
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-semibold mt-1.5">İnternet gerekmez.</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-gray-400 mt-4">
+              ⚠ Mod değiştirirseniz oturumunuz kapanır, yeni modla tekrar giriş yapmanız gerekir.
+              İki mod farklı veritabanı kullandığı için verileriniz karışmaz.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowConnSettings(false)}
+              className="mt-5 w-full py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
