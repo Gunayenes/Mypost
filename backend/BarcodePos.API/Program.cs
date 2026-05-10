@@ -272,7 +272,19 @@ try
     app.UseMiddleware<LicenseCheckMiddleware>();
 
     // ── Static dosyalar (uploads her zaman, frontend sadece production) ──
-    app.UseStaticFiles(); // uploads/logos vb. her ortamda erişilebilir
+    // .exe ve diğer binary uzantılar için MIME type ekle (masaüstü installer indirilebilsin)
+    var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+    contentTypeProvider.Mappings[".exe"] = "application/octet-stream";
+    contentTypeProvider.Mappings[".msi"] = "application/x-msi";
+    contentTypeProvider.Mappings[".dmg"] = "application/x-apple-diskimage";
+    contentTypeProvider.Mappings[".AppImage"] = "application/octet-stream";
+
+    app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
+    {
+        ContentTypeProvider = contentTypeProvider,
+        ServeUnknownFileTypes = true,
+        DefaultContentType = "application/octet-stream"
+    }); // uploads/logos + downloads/*.exe vb. her ortamda erişilebilir
     if (!app.Environment.IsDevelopment())
     {
         app.UseDefaultFiles();
