@@ -40,11 +40,10 @@ export default function DownloadPage() {
                 <Monitor className="text-primary-600" size={32} />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Cari Soft v1.0.0</h2>
-              <p className="text-sm text-slate-500 mb-6">Windows 10/11 · 64-bit · ~85 MB</p>
+              <p className="text-sm text-slate-500 mb-6">Windows 10/11 · 64-bit · ~145 MB</p>
               <a
-                href="https://github.com/Gunayenes/Mypost/releases/latest"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/downloads/CariSoft-Setup.exe"
+                download="CariSoft-Setup.exe"
                 className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 text-base font-semibold text-white bg-primary-600 rounded-2xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/25 hover:shadow-primary-600/40"
               >
                 <Download size={20} />
@@ -52,6 +51,9 @@ export default function DownloadPage() {
               </a>
               <p className="mt-4 text-xs text-slate-400">
                 İndirerek kullanım şartlarını kabul etmiş olursunuz.
+              </p>
+              <p className="mt-2 text-xs text-emerald-600 font-medium">
+                ✓ İnternet olmadan da çalışır · ✓ SQLite veritabanı dahil · ✓ Otomatik güncellemeler
               </p>
             </div>
           </FadeIn>

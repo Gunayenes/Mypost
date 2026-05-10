@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react';
 const navLinks = [
   { label: 'Özellikler', href: '/ozellikler' },
   { label: 'Fiyatlandırma', href: '/fiyatlandirma' },
+  { label: 'İndir', href: '/indir' },
   { label: 'İletişim', href: '/iletisim' },
 ];
 

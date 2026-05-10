@@ -43,6 +43,18 @@ if ($LASTEXITCODE -ne 0) { Write-Host "HATA: Frontend build basarisiz!" -Foregro
 Pop-Location
 Copy-Item "$FRONTEND\dist\*" $WWWROOT -Recurse -Force
 
+# ── Masaüstü installer'ı varsa wwwroot/downloads'a koy (web sitesinde indirilebilsin) ──
+$installerSrc = "$FRONTEND\electron-dist\Cari Soft Setup 1.0.0.exe"
+if (Test-Path $installerSrc) {
+    $downloadsDir = "$WWWROOT\downloads"
+    New-Item -ItemType Directory -Path $downloadsDir -Force | Out-Null
+    Copy-Item $installerSrc "$downloadsDir\CariSoft-Setup.exe" -Force
+    $instSize = [math]::Round((Get-Item "$downloadsDir\CariSoft-Setup.exe").Length / 1MB, 1)
+    Write-Host "  Masaüstü installer eklendi: /downloads/CariSoft-Setup.exe ($instSize MB)" -ForegroundColor Green
+} else {
+    Write-Host "  (Masaüstü installer bulunamadı - sadece web paketi)" -ForegroundColor Gray
+}
+
 # ── Backend publish ──
 Write-Host "[4/5] Backend publish..." -ForegroundColor Yellow
 Push-Location $BACKEND
