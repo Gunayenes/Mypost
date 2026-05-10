@@ -979,37 +979,53 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  {/* USD bilgisi (sadece USD'li ürünlerde) */}
-                  {(productDetail.salePriceUsd ?? 0) > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <DollarSign size={16} className="text-amber-700" />
-                        <span className="text-sm font-bold text-amber-900">USD Fiyatlama</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-amber-700 font-semibold">Alış (USD)</p>
-                          <p className="font-black text-amber-900 tabular-nums">${fmt(productDetail.costPriceUsd ?? 0)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-amber-700 font-semibold">Satış (USD)</p>
-                          <p className="font-black text-amber-900 tabular-nums">${fmt(productDetail.salePriceUsd ?? 0)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-amber-700 font-semibold">Kayıtlı Kur</p>
-                          <p className="font-black text-amber-900 tabular-nums">₺{fmt(productDetail.exchangeRate ?? 0)}</p>
-                        </div>
-                      </div>
-                      {(productDetail.currentExchangeRate ?? 0) > 0 && productDetail.currentExchangeRate !== productDetail.exchangeRate && (
-                        <div className="pt-2 border-t border-amber-300 flex items-center justify-between text-xs">
-                          <span className="text-amber-700">Güncel kur ({fmt(productDetail.currentExchangeRate)} ₺):</span>
-                          <span className="font-bold text-amber-900">
-                            Alış ₺{fmt(productDetail.currentCostPrice ?? 0)} · Satış ₺{fmt(productDetail.currentSalePrice ?? 0)}
+                  {/* USD bilgisi — her zaman göster */}
+                  {(() => {
+                    const hasUsd = (productDetail.salePriceUsd ?? 0) > 0 || (productDetail.costPriceUsd ?? 0) > 0;
+                    return (
+                      <div className={`border rounded-lg p-4 space-y-3 ${hasUsd ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign size={16} className={hasUsd ? 'text-amber-700' : 'text-gray-400'} />
+                          <span className={`text-sm font-bold ${hasUsd ? 'text-amber-900' : 'text-gray-600'}`}>
+                            USD Fiyatlama
                           </span>
+                          {!hasUsd && (
+                            <span className="text-[11px] text-gray-400 font-medium ml-auto">
+                              Bu ürün USD ile fiyatlanmıyor
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <p className={`text-xs font-semibold ${hasUsd ? 'text-amber-700' : 'text-gray-500'}`}>Alış (USD)</p>
+                            <p className={`font-black tabular-nums ${hasUsd ? 'text-amber-900' : 'text-gray-400'}`}>
+                              ${fmt(productDetail.costPriceUsd ?? 0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-xs font-semibold ${hasUsd ? 'text-amber-700' : 'text-gray-500'}`}>Satış (USD)</p>
+                            <p className={`font-black tabular-nums ${hasUsd ? 'text-amber-900' : 'text-gray-400'}`}>
+                              ${fmt(productDetail.salePriceUsd ?? 0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-xs font-semibold ${hasUsd ? 'text-amber-700' : 'text-gray-500'}`}>Kayıtlı Kur</p>
+                            <p className={`font-black tabular-nums ${hasUsd ? 'text-amber-900' : 'text-gray-400'}`}>
+                              ₺{fmt(productDetail.exchangeRate ?? 0)}
+                            </p>
+                          </div>
+                        </div>
+                        {hasUsd && (productDetail.currentExchangeRate ?? 0) > 0 && productDetail.currentExchangeRate !== productDetail.exchangeRate && (
+                          <div className="pt-2 border-t border-amber-300 flex items-center justify-between text-xs">
+                            <span className="text-amber-700">Güncel kur ({fmt(productDetail.currentExchangeRate)} ₺):</span>
+                            <span className="font-bold text-amber-900">
+                              Alış ₺{fmt(productDetail.currentCostPrice ?? 0)} · Satış ₺{fmt(productDetail.currentSalePrice ?? 0)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Diğer detaylar */}
                   <div className="grid grid-cols-2 gap-3">
