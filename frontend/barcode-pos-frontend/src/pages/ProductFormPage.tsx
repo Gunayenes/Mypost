@@ -211,8 +211,14 @@ export default function ProductFormPage() {
       } else {
         setError(res.message ?? 'Barkod oluşturulamadı.');
       }
-    } catch {
-      setError('Barkod oluşturulurken hata oluştu.');
+    } catch (err: unknown) {
+      // Backend Conflict (409) veya başka HTTP hatasıyla gelmiş olabilir — gerçek mesajı göster
+      const e = err as { response?: { data?: { message?: string }; status?: number } };
+      const apiMsg = e?.response?.data?.message;
+      const status = e?.response?.status;
+      setError(apiMsg ?? `Barkod oluşturulurken hata oluştu${status ? ` (HTTP ${status})` : ''}.`);
+      // eslint-disable-next-line no-console
+      console.error('[Barkod oluşturma hatası]', err);
     } finally {
       setGeneratingBarcode(false);
     }

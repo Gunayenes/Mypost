@@ -161,44 +161,61 @@ public class ProductService : IProductService
 
     public async Task<Result<string>> GenerateBarcodeAsync(int storeId)
     {
-        // Dahili barkod üretme — EAN-13 uyumlu "20" prefix (GS1 mağaza içi kullanım)
-        // Format: 20 + storeId(2) + sıra(8) + kontrol(1) = 13 haneli
-        var storePrefix = $"20{storeId % 100:D2}";
-
-        // Mevcut prefix'le başlayan tüm barkodları al, sequence kısmını sayı olarak parse edip max'ı bul
-        // (string OrderByDesc karışık uzunluklu eski barkodlarda hatalı sıralama yapabiliyor)
-        var existingBarcodes = await _context.Products
-            .Where(p => p.StoreId == storeId && p.Barcode.StartsWith(storePrefix))
-            .Select(p => p.Barcode)
-            .ToListAsync();
-
-        long maxSequence = 0;
-        foreach (var bc in existingBarcodes)
+        try
         {
-            // Hem 12 (eski format: prefix + 8 hane) hem 13 (yeni format: prefix + 8 hane + check) destekle
-            if (bc.Length >= 12 && long.TryParse(bc.Substring(4, 8), out var seq))
+            // Dahili barkod üretme — EAN-13 uyumlu "20" prefix (GS1 mağaza içi kullanım)
+            // Format: 20 + storeId(2) + sıra(8) + kontrol(1) = 13 haneli
+            if (storeId <= 0)
+                return Result<string>.Fail($"Geçersiz mağaza kimliği ({storeId}). Lütfen tekrar giriş yapın.");
+
+            var storePrefix = $"20{storeId % 100:D2}";
+
+            // Mevcut prefix'le başlayan tüm barkodları al
+            var existingBarcodes = await _context.Products
+                .AsNoTracking()
+                .Where(p => p.StoreId == storeId && p.Barcode.StartsWith(storePrefix))
+                .Select(p => p.Barcode)
+                .ToListAsync();
+
+            // Sequence kısmını sayı olarak parse edip max'ı bul (12 ve 13 char destekli)
+            long maxSequence = 0;
+            foreach (var bc in existingBarcodes)
             {
-                if (seq > maxSequence) maxSequence = seq;
+                if (bc.Length < 12) continue;
+                var seqLen = Math.Min(8, bc.Length - 4);
+                if (seqLen <= 0) continue;
+                var seqStr = bc.Substring(4, seqLen);
+                if (long.TryParse(seqStr, out var seq) && seq > maxSequence)
+                    maxSequence = seq;
             }
+
+            var existingSet = new HashSet<string>(existingBarcodes);
+
+            // Sıradakini üret; çakışırsa ileri kayarak tekrar dene (200 deneme yeterli)
+            for (var i = 1; i <= 200; i++)
+            {
+                var nextSequence = maxSequence + i;
+                if (nextSequence > 99_999_999) break; // 8 haneli sequence sınırı
+
+                var barcodeWithoutCheck = $"{storePrefix}{nextSequence:D8}";
+                var checkDigit = CalculateEan13CheckDigit(barcodeWithoutCheck);
+                var barcode = $"{barcodeWithoutCheck}{checkDigit}";
+
+                if (existingSet.Contains(barcode)) continue;
+
+                // Son güvenlik: yarış durumuna karşı DB'de gerçekten var mı?
+                var dbExists = await _context.Products.AsNoTracking()
+                    .AnyAsync(p => p.StoreId == storeId && p.Barcode == barcode);
+                if (!dbExists) return Result<string>.Ok(barcode);
+            }
+
+            return Result<string>.Fail($"Barkod üretilemedi (200 deneme tükendi). " +
+                $"Mevcut: {existingBarcodes.Count} barkod, Max sıra: {maxSequence}, Prefix: {storePrefix}");
         }
-
-        var existingSet = existingBarcodes.ToHashSet();
-
-        // Sıradakiyi üret; nadir de olsa çakışırsa ileri kayarak tekrar dene (max 100)
-        for (var i = 1; i <= 100; i++)
+        catch (Exception ex)
         {
-            var nextSequence = maxSequence + i;
-            if (nextSequence > 99_999_999) break; // 8 haneli sequence sınırı
-
-            var barcodeWithoutCheck = $"{storePrefix}{nextSequence:D8}";
-            var checkDigit = CalculateEan13CheckDigit(barcodeWithoutCheck);
-            var barcode = $"{barcodeWithoutCheck}{checkDigit}";
-
-            if (!existingSet.Contains(barcode))
-                return Result<string>.Ok(barcode);
+            return Result<string>.Fail($"Barkod üretilirken hata: {ex.GetType().Name} - {ex.Message}");
         }
-
-        return Result<string>.Fail("Barkod üretilemedi: Tüm dahili barkod havuzu dolu görünüyor.");
     }
 
     private static int CalculateEan13CheckDigit(string code12)
