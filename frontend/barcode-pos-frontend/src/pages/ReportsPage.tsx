@@ -128,7 +128,8 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const [closingRes, salesRes, profitRes, topRes, payRes, lowRes] = await Promise.all([
-        reportsApi.dailyClosingReport(endDate),
+        // Tarih aralığı seçildiyse [startDate, endDate] toplamı; tek günse sadece o gün
+        reportsApi.dailyClosingReport(startDate, startDate !== endDate ? endDate : undefined),
         reportsApi.salesReport(startDate, endDate),
         reportsApi.profitReport(startDate, endDate),
         reportsApi.topProducts(startDate, endDate),

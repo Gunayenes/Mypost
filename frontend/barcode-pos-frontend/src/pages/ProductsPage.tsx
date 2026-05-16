@@ -32,13 +32,19 @@ export default function ProductsPage() {
   const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [totalCount, setTotalCount] = useState(0);
+
   const load = () => {
     setLoading(true);
     Promise.all([
-      productsApi.getAll({ search: search || undefined, categoryId: filterCategory || undefined, isActive: true, pageSize: 100 }),
+      // pageSize=10000: pratikte tek seferde tüm ürünleri yükler (sayfalama yok)
+      productsApi.getAll({ search: search || undefined, categoryId: filterCategory || undefined, isActive: true, pageSize: 10000 }),
       categoriesApi.getAll(),
     ]).then(([pRes, cRes]) => {
-      if (pRes.data.success) setProducts(pRes.data.data?.items ?? []);
+      if (pRes.data.success) {
+        setProducts(pRes.data.data?.items ?? []);
+        setTotalCount(pRes.data.data?.totalCount ?? 0);
+      }
       if (cRes.data.success) setCategories(cRes.data.data ?? []);
       setLoading(false);
       setEdits({});
@@ -291,31 +297,61 @@ export default function ProductsPage() {
         </form>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg"><Package size={18} className="text-blue-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Toplam Ürün</p>
-            <p className="text-lg font-bold">{products.length}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
-          <div className="p-2 bg-green-50 rounded-lg"><Package size={18} className="text-green-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Aktif</p>
-            <p className="text-lg font-bold">{products.filter((p) => p.isActive).length}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
-          <div className="p-2 bg-red-50 rounded-lg"><AlertTriangle size={18} className="text-red-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Düşük Stok</p>
-            <p className="text-lg font-bold text-red-600">
-              {products.filter((p) => p.stockQuantity <= p.minStockLevel).length}
-            </p>
-          </div>
-        </div>
-      </div>
+      {(() => {
+        const isFiltered = filterCategory !== '';
+        const activeCount = products.filter((p) => p.isActive).length;
+        const lowStockCount = products.filter((p) => p.stockQuantity <= p.minStockLevel).length;
+        // Filtreli görünüm: yüklenen ürünlerin alış/satış toplamları (stok ile çarpılı)
+        const totalCost = products.reduce((s, p) => s + (p.costPrice * p.stockQuantity), 0);
+        const totalSale = products.reduce((s, p) => s + (p.salePrice * p.stockQuantity), 0);
+        const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        return (
+          <>
+            <div className={`grid ${isFiltered ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-3'} gap-3`}>
+              <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg"><Package size={18} className="text-blue-600" /></div>
+                <div>
+                  <p className="text-xs text-gray-500">Toplam Ürün</p>
+                  <p className="text-lg font-bold">{totalCount.toLocaleString('tr-TR')}</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                <div className="p-2 bg-green-50 rounded-lg"><Package size={18} className="text-green-600" /></div>
+                <div>
+                  <p className="text-xs text-gray-500">Aktif</p>
+                  <p className="text-lg font-bold">{activeCount.toLocaleString('tr-TR')}</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                <div className="p-2 bg-red-50 rounded-lg"><AlertTriangle size={18} className="text-red-600" /></div>
+                <div>
+                  <p className="text-xs text-gray-500">Düşük Stok</p>
+                  <p className="text-lg font-bold text-red-600">{lowStockCount.toLocaleString('tr-TR')}</p>
+                </div>
+              </div>
+              {isFiltered && (
+                <>
+                  <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                    <div className="p-2 bg-amber-50 rounded-lg text-amber-600 text-sm font-bold">₺</div>
+                    <div>
+                      <p className="text-xs text-gray-500">Toplam Alış (Stoklu)</p>
+                      <p className="text-base font-bold text-amber-700 tabular-nums">₺{fmt(totalCost)}</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600 text-sm font-bold">₺</div>
+                    <div>
+                      <p className="text-xs text-gray-500">Toplam Satış (Stoklu)</p>
+                      <p className="text-base font-bold text-emerald-700 tabular-nums">₺{fmt(totalSale)}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       {/* Toplu seçim toolbar'ı */}
       {selected.size > 0 && (

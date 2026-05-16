@@ -56,10 +56,11 @@ public class ReportService : IReportService
         });
     }
 
-    public async Task<Result<DailyClosingReportDto>> GetDailyClosingReportAsync(DateTime date, int storeId)
+    public async Task<Result<DailyClosingReportDto>> GetDailyClosingReportAsync(DateTime date, int storeId, DateTime? dateTo = null)
     {
         var dayStart = date.Date;
-        var dayEnd = dayStart.AddDays(1);
+        // dateTo verilirse [date, dateTo dahil] aralığı; verilmezse sadece o gün
+        var dayEnd = dateTo.HasValue ? dateTo.Value.Date.AddDays(1) : dayStart.AddDays(1);
 
         // Tüm satışları yükle (items + user dahil)
         var allSales = await _context.Sales

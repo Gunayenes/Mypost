@@ -40,11 +40,11 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("daily-closing")]
-    public async Task<IActionResult> GetDailyClosingReport([FromQuery] DateTime? date)
+    public async Task<IActionResult> GetDailyClosingReport([FromQuery] DateTime? date, [FromQuery] DateTime? dateTo)
     {
         var check = CheckReportAccess(); if (check is not null) return check;
         var reportDate = date ?? DateTime.UtcNow.Date;
-        var result = await _reportService.GetDailyClosingReportAsync(reportDate, _currentUser.StoreId);
+        var result = await _reportService.GetDailyClosingReportAsync(reportDate, _currentUser.StoreId, dateTo);
         return Ok(result);
     }
 

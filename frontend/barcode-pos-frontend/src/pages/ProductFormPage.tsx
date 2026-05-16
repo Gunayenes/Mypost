@@ -311,11 +311,20 @@ export default function ProductFormPage() {
     }
   };
 
-  // Hesaplamalar
+  // Hesaplamalar — kâr oranı costPrice/salePrice'tan türetilir
   const profitMargin = form.salePrice > 0 && form.costPrice > 0
     ? ((form.salePrice - form.costPrice) / form.costPrice * 100).toFixed(1)
     : '0.0';
   const salePriceWithTax = form.salePrice * (1 + form.taxRate / 100);
+
+  // Kâr oranı düzenlendiğinde: salePrice = costPrice * (1 + margin/100)
+  // USD modunda salePrice TL, USD'den hesaplanır → bu modda kâr oranı düzenlemesi kapalı
+  const handleProfitMarginChange = (value: string) => {
+    const margin = parseFloat(value.replace(',', '.'));
+    if (isNaN(margin) || form.costPrice <= 0) return;
+    const newSale = Math.round(form.costPrice * (1 + margin / 100) * 100) / 100;
+    setForm((f) => ({ ...f, salePrice: newSale }));
+  };
 
   if (loading) {
     return (
@@ -687,11 +696,23 @@ export default function ProductFormPage() {
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
                       <TrendingUp size={13} /> Kâr Oranı
                     </label>
-                    <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold tabular-nums flex items-center gap-1">
-                      <Percent size={13} className="text-gray-400" />
-                      <span className={+profitMargin > 0 ? 'text-green-600' : 'text-red-600'}>
-                        {profitMargin}
-                      </span>
+                    <div className={`relative ${currencyMode === 'USD' ? 'opacity-60' : ''}`}>
+                      <Percent size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={profitMargin}
+                        onChange={(e) => handleProfitMarginChange(e.target.value)}
+                        disabled={currencyMode === 'USD' || form.costPrice <= 0}
+                        title={currencyMode === 'USD'
+                          ? 'USD modunda kâr oranı USD fiyatlardan otomatik türetilir'
+                          : form.costPrice <= 0
+                            ? 'Önce alış fiyatını girin'
+                            : 'Kâr oranını değiştirin, satış fiyatı otomatik güncellenir'}
+                        className={`w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm font-bold tabular-nums focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none disabled:bg-gray-50 disabled:cursor-not-allowed ${
+                          +profitMargin > 0 ? 'text-green-600' : +profitMargin < 0 ? 'text-red-600' : 'text-gray-500'
+                        }`}
+                      />
                     </div>
                   </div>
                   <div>
