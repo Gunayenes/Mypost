@@ -93,7 +93,13 @@ public class ReportService : IReportService
         var totalItemsSold = completedItems.Sum(i => i.Quantity);
         var grandTotal = completed.Sum(s => s.GrandTotal);
         var totalCost = completedItems.Sum(i => i.CostPrice * i.Quantity);
-        var grossProfit = grandTotal - totalCost;
+
+        // İadelerden gelen kâr/zarar etkisi — iade tutarı kasadan çıktı,
+        // maliyeti envantere geri döndü. Brüt kârdan iadelerin kâr kısmı düşülür.
+        var returnedItems = returned.SelectMany(s => s.Items).ToList();
+        var returnedCost = returnedItems.Sum(i => i.CostPrice * i.Quantity);
+        var returnedProfit = returned.Sum(s => s.GrandTotal) - returnedCost;
+        var grossProfit = (grandTotal - totalCost) - returnedProfit;
 
         // Saatlik dağılım (0-23 arası)
         var hourlyBreakdown = Enumerable.Range(0, 24).Select(h =>
@@ -167,7 +173,8 @@ public class ReportService : IReportService
             GrossProfitMargin = grandTotal > 0 ? Math.Round(grossProfit / grandTotal * 100, 2) : 0,
             ServiceRevenue = serviceRevenue,
             ServiceCount = deliveredServices.Count,
-            CombinedTotal = grandTotal + serviceRevenue,
+            // Net günlük gelir: tamamlanan satışlar + servis - iadeler
+            CombinedTotal = grandTotal - returned.Sum(s => s.GrandTotal) + serviceRevenue,
             HourlyBreakdown = hourlyBreakdown,
             CashierBreakdown = cashierBreakdown,
             TopProducts = topProducts

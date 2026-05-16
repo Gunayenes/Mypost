@@ -44,7 +44,8 @@ public class SaleService : ISaleService
             .Where(p => productIds.Contains(p.Id) && p.StoreId == storeId)
             .ToListAsync();
 
-        // Doğrulama
+        // Doğrulama — İade işleminde stok kontrolü yok (zaten geri ekleyeceğiz)
+        var isRefund = paymentType == PaymentType.Iade;
         foreach (var item in request.Items)
         {
             var product = products.FirstOrDefault(p => p.Id == item.ProductId);
@@ -52,7 +53,7 @@ public class SaleService : ISaleService
                 return Result<SaleResponseDto>.Fail($"Ürün bulunamadı (Id={item.ProductId}).");
             if (!product.IsActive)
                 return Result<SaleResponseDto>.Fail($"Ürün aktif değil: {product.Name}");
-            if (product.StockQuantity < item.Quantity)
+            if (!isRefund && product.StockQuantity < item.Quantity)
                 return Result<SaleResponseDto>.Fail($"Yetersiz stok: {product.Name} (Mevcut: {product.StockQuantity}, İstenen: {item.Quantity})");
         }
 
@@ -121,7 +122,7 @@ public class SaleService : ISaleService
             var totalDiscount = request.DiscountTotal + itemDiscountTotal;
             var grandTotal = subTotal - totalDiscount + taxTotal;
 
-            // Sale oluştur
+            // Sale oluştur — İade ise Status=Iade, ürünler stoğa geri ekleniyor
             var sale = new Sale
             {
                 StoreId = storeId,
@@ -136,27 +137,44 @@ public class SaleService : ISaleService
                 PaymentType = paymentType,
                 PaidCash = GetPaidCash(paymentType, request),
                 PaidCard = GetPaidCard(paymentType, request),
-                Status = SaleStatus.Tamamlandi,
+                Status = isRefund ? SaleStatus.Iade : SaleStatus.Tamamlandi,
                 Items = saleItems
             };
 
             _context.Sales.Add(sale);
 
-            // Stok güncelle + stok hareketi oluştur
+            // Stok güncelle + stok hareketi
+            // Normal satışta: stok düşer (-), MovementType.Satis
+            // İade işleminde: stok artar (+), MovementType.Iade
             foreach (var item in request.Items)
             {
                 var product = products.First(p => p.Id == item.ProductId);
-                product.StockQuantity -= item.Quantity;
-
-                _context.StockMovements.Add(new StockMovement
+                if (isRefund)
                 {
-                    ProductId = product.Id,
-                    UserId = userId,
-                    Type = MovementType.Satis,
-                    Quantity = -item.Quantity,
-                    StockAfter = product.StockQuantity,
-                    Note = $"Satış: {receiptNumber}"
-                });
+                    product.StockQuantity += item.Quantity;
+                    _context.StockMovements.Add(new StockMovement
+                    {
+                        ProductId = product.Id,
+                        UserId = userId,
+                        Type = MovementType.Iade,
+                        Quantity = item.Quantity,
+                        StockAfter = product.StockQuantity,
+                        Note = $"İade: {receiptNumber}"
+                    });
+                }
+                else
+                {
+                    product.StockQuantity -= item.Quantity;
+                    _context.StockMovements.Add(new StockMovement
+                    {
+                        ProductId = product.Id,
+                        UserId = userId,
+                        Type = MovementType.Satis,
+                        Quantity = -item.Quantity,
+                        StockAfter = product.StockQuantity,
+                        Note = $"Satış: {receiptNumber}"
+                    });
+                }
             }
 
             // Veresiye ise müşteri bakiyesini güncelle

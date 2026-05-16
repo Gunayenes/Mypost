@@ -5,7 +5,7 @@ namespace BarcodePos.Application.Validators.Sales;
 
 public class CreateSaleRequestValidator : AbstractValidator<CreateSaleRequest>
 {
-    private static readonly string[] ValidPaymentTypes = ["Nakit", "Kart", "Veresiye", "Parcali"];
+    private static readonly string[] ValidPaymentTypes = ["Nakit", "Kart", "Veresiye", "Parcali", "Iade"];
 
     public CreateSaleRequestValidator()
     {

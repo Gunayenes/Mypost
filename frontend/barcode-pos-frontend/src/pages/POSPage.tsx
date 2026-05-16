@@ -25,6 +25,7 @@ import {
   User,
   UserPlus,
   Split,
+  RotateCcw,
 } from 'lucide-react';
 
 export default function POSPage() {
@@ -48,6 +49,8 @@ export default function POSPage() {
   const storeSettings = useStoreSettings((s) => s.settings);
   const [splitCash, setSplitCash] = useState(0);
   const [splitCard, setSplitCard] = useState(0);
+  // Ürün karşılığı (trade-in): müşteri ödediği yerine eski/farklı ürün getirip değer karşılığı yapar
+  const [splitTradeIn, setSplitTradeIn] = useState(0);
   const [priceView, setPriceView] = useState<{ name: string; price: number; tax: number; barcode: string } | null>(null);
 
   const {
@@ -230,7 +233,8 @@ export default function POSPage() {
     if (paymentType === 'Veresiye') {
       computedPaid = 0;
     } else if (paymentType === 'Parcali') {
-      computedPaid = splitCash + splitCard;
+      // Parçalı: Nakit + Kart + Ürün Karşılığı (trade-in) = Toplam
+      computedPaid = splitCash + splitCard + splitTradeIn;
       if (computedPaid < total) {
         setError(`Parçalı ödeme toplamı yetersiz (₺${computedPaid.toFixed(2)} / ₺${total.toFixed(2)}).`);
         setTimeout(() => setError(''), 3000);
@@ -256,7 +260,8 @@ export default function POSPage() {
         paidAmount: computedPaid,
         paidCash: paymentType === 'Parcali' ? splitCash : 0,
         paidCard: paymentType === 'Parcali' ? splitCard : 0,
-        discountTotal: roundingAmount + discountTotal,
+        // Ürün karşılığı (trade-in) ek olarak indirim olarak yazılır — kasaya nakit girmedi
+        discountTotal: roundingAmount + discountTotal + (paymentType === 'Parcali' ? splitTradeIn : 0),
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -264,10 +269,13 @@ export default function POSPage() {
         })),
       });
       if (res.success) {
-        setSuccessMsg(`✓ Satış tamamlandı! Fiş: ${res.data?.receiptNumber}`);
+        setSuccessMsg(paymentType === 'Iade'
+          ? `↩ İade tamamlandı! Fiş: ${res.data?.receiptNumber}`
+          : `✓ Satış tamamlandı! Fiş: ${res.data?.receiptNumber}`);
         clearCart();
         setSplitCash(0);
         setSplitCard(0);
+        setSplitTradeIn(0);
         handleClearCustomer();
         setTimeout(() => setSuccessMsg(''), 5000);
       } else {
@@ -297,7 +305,7 @@ export default function POSPage() {
       if (e.key === 'F8') { e.preventDefault(); setPaymentType('Nakit'); }
       if (e.key === 'F9') { e.preventDefault(); setPaymentType('Kart'); }
       if (e.key === 'F10') { e.preventDefault(); setPaymentType('Veresiye'); }
-      if (e.key === 'F11') { e.preventDefault(); setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }
+      if (e.key === 'F11') { e.preventDefault(); setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); setSplitTradeIn(0); }
       if (e.key === 'F12') { e.preventDefault(); handleCompleteSaleRef.current(); }
       if (e.key === 'Escape') { clearCart(); handleClearCustomer(); inputRef.current?.focus(); }
     };
@@ -369,8 +377,8 @@ export default function POSPage() {
         <span>Ödeme: ${paymentType === 'Parcali' ? 'Parçalı' : paymentType === 'Kart' ? 'Kredi Kartı' : paymentType}</span>
         <span>Ödenen: ${(paymentType === 'Veresiye' ? 0 : paymentType === 'Parcali' ? splitCash + splitCard : grandTotal).toFixed(2)} ₺</span>
       </div>
-      ${paymentType === 'Parcali' ? `<div style="font-size:11px;">Nakit: ${splitCash.toFixed(2)} ₺ | Kart: ${splitCard.toFixed(2)} ₺</div>` : ''}
-      ${paymentType === 'Parcali' && (splitCash + splitCard) > grandTotal ? `<div style="font-size:12px;"><b>Para Üstü: ${((splitCash + splitCard) - grandTotal).toFixed(2)} ₺</b></div>` : ''}
+      ${paymentType === 'Parcali' ? `<div style="font-size:11px;">Nakit: ${splitCash.toFixed(2)} ₺ | Kart: ${splitCard.toFixed(2)} ₺${splitTradeIn > 0 ? ` | Ürün Krş.: ${splitTradeIn.toFixed(2)} ₺` : ''}</div>` : ''}
+      ${paymentType === 'Parcali' && (splitCash + splitCard + splitTradeIn) > grandTotal ? `<div style="font-size:12px;"><b>Para Üstü: ${((splitCash + splitCard + splitTradeIn) - grandTotal).toFixed(2)} ₺</b></div>` : ''}
       <div class="line"></div>
       <div class="center" style="font-size:10px;margin-top:6px;">Bizi tercih ettiğiniz için teşekkürler!</div>
       <div class="center" style="font-size:9px;color:#888;margin-top:2px;">Cari Soft POS</div>
@@ -468,7 +476,7 @@ export default function POSPage() {
             <div className="border-2 border-green-300 rounded-lg p-2 xl:p-3 bg-green-50/40">
               <span className="text-[10px] xl:text-xs font-semibold text-green-700 uppercase tracking-wide">Para Üstü</span>
               <p className="text-lg xl:text-2xl 2xl:text-3xl font-black text-green-700 tabular-nums">
-                ₺{(paymentType === 'Parcali' ? Math.max(0, splitCash + splitCard - grandTotal) : 0)
+                ₺{(paymentType === 'Parcali' ? Math.max(0, splitCash + splitCard + splitTradeIn - grandTotal) : 0)
                   .toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
               </p>
             </div>
@@ -608,7 +616,7 @@ export default function POSPage() {
 
           {/* Ödeme tipi butonları */}
           <div className="px-2 py-2 border-b border-gray-200 space-y-1.5">
-            <div className="grid grid-cols-2 2xl:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-1.5">
               <button
                 onClick={() => setPaymentType('Nakit')}
                 className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
@@ -646,7 +654,7 @@ export default function POSPage() {
                 <span className="text-[9px] font-normal opacity-70">F10</span>
               </button>
               <button
-                onClick={() => { setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); }}
+                onClick={() => { setPaymentType('Parcali'); setSplitCash(0); setSplitCard(0); setSplitTradeIn(0); }}
                 className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
                   paymentType === 'Parcali'
                     ? 'border-purple-500 bg-purple-500 text-white'
@@ -656,6 +664,19 @@ export default function POSPage() {
                 <Split size={18} />
                 <span>PARÇALI</span>
                 <span className="text-[9px] font-normal opacity-70">F11</span>
+              </button>
+              <button
+                onClick={() => setPaymentType('Iade')}
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[11px] font-bold transition border-2 ${
+                  paymentType === 'Iade'
+                    ? 'border-rose-500 bg-rose-500 text-white'
+                    : 'border-gray-200 text-gray-600 hover:border-rose-300 hover:bg-rose-50'
+                }`}
+                title="İade: ürünler stoğa eklenir, müşteriye geri ödeme yapılır"
+              >
+                <RotateCcw size={18} />
+                <span>İADE</span>
+                <span className="text-[9px] font-normal opacity-70"></span>
               </button>
             </div>
 
@@ -700,9 +721,39 @@ export default function POSPage() {
                     />
                   </div>
                 </div>
-                <div className="flex justify-between text-xs pt-1 border-t border-purple-200">
-                  <span className="text-purple-700 font-semibold">Toplam Ödenen</span>
-                  <span className="font-black text-purple-800">₺{(splitCash + splitCard).toFixed(2)}</span>
+                {/* Ürün karşılığı (trade-in) — müşteri ürün getirip değer karşılığı yapar */}
+                <div className="flex items-center gap-2">
+                  <ShoppingBag size={14} className="text-amber-600 shrink-0" />
+                  <span className="text-xs font-semibold text-gray-600 w-14">Ürün Krş.</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₺</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={splitTradeIn || ''}
+                      onChange={(e) => {
+                        const trade = Math.max(0, +e.target.value || 0);
+                        setSplitTradeIn(trade);
+                      }}
+                      placeholder="0.00"
+                      title="Müşterinin getirdiği ürünün karşılık değeri (ödemeden düşülür)"
+                      className="w-full pl-6 pr-2 py-2 border border-amber-300 rounded-lg text-sm font-bold text-right focus:border-amber-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-1 border-t border-purple-200 space-y-0.5">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-purple-700">Karşılanan</span>
+                    <span className="font-bold text-purple-800">₺{(splitCash + splitCard + splitTradeIn).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-gray-600">Kalan</span>
+                    <span className={`font-bold ${(splitCash + splitCard + splitTradeIn) >= grandTotal ? 'text-green-700' : 'text-red-600'}`}>
+                      ₺{Math.max(0, grandTotal - (splitCash + splitCard + splitTradeIn)).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -867,14 +918,24 @@ export default function POSPage() {
               <button
                 onClick={handleCompleteSale}
                 disabled={items.length === 0 || processing}
-                className="w-full py-3 bg-green-600 text-white rounded-lg font-black text-sm hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className={`w-full py-3 text-white rounded-lg font-black text-sm transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                  paymentType === 'Iade'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
               >
                 {processing ? (
                   <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                ) : paymentType === 'Iade' ? (
+                  <RotateCcw size={18} />
                 ) : (
                   <CheckCircle size={18} />
                 )}
-                {processing ? 'İşleniyor...' : 'SATIŞ TAMAMLA (F12)'}
+                {processing
+                  ? 'İşleniyor...'
+                  : paymentType === 'Iade'
+                    ? 'İADE ONAYLA (F12)'
+                    : 'SATIŞ TAMAMLA (F12)'}
               </button>
               <button
                 onClick={() => { clearCart(); handleClearCustomer(); inputRef.current?.focus(); }}
