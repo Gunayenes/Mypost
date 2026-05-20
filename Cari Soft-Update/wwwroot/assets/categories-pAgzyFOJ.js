@@ -1,0 +1,1 @@
+import{m as t}from"./index-C65rAs_b.js";const g={getAll:()=>t.get("/categories"),getById:e=>t.get(`/categories/${e}`),create:e=>t.post("/categories",e),update:(e,a)=>t.put(`/categories/${e}`,a),delete:e=>t.delete(`/categories/${e}`)};export{g as c};

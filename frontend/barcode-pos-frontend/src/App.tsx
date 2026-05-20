@@ -32,7 +32,6 @@ const PublicLayout = lazy(() => import('@/components/public/PublicLayout'));
 const HomePage = lazy(() => import('@/pages/public/HomePage'));
 const FeaturesPage = lazy(() => import('@/pages/public/FeaturesPage'));
 const PricingPage = lazy(() => import('@/pages/public/PricingPage'));
-const DownloadPage = lazy(() => import('@/pages/public/DownloadPage'));
 const ContactPage = lazy(() => import('@/pages/public/ContactPage'));
 const RegisterPage = lazy(() => import('@/pages/public/RegisterPage'));
 const ServiceTrackingPage = lazy(() => import('@/pages/public/ServiceTrackingPage'));
@@ -120,7 +119,6 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="ozellikler" element={<FeaturesPage />} />
         <Route path="fiyatlandirma" element={<PricingPage />} />
-        <Route path="indir" element={<DownloadPage />} />
         <Route path="iletisim" element={<ContactPage />} />
       </Route>
 

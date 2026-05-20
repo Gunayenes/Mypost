@@ -1,0 +1,1 @@
+import{k as r}from"./index-YRo3ynbe.js";const t={register:o=>r.post("/web/register",o),forgotPassword:o=>r.post("/web/forgot-password",{email:o}),resetPassword:(o,s)=>r.post("/web/reset-password",{token:o,newPassword:s}),confirmEmail:o=>r.get("/web/confirm-email",{params:{token:o}}),resendConfirmation:o=>r.post("/web/resend-confirmation",{email:o})};export{t as w};
