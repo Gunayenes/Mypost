@@ -106,8 +106,8 @@ export default function BackupPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.name.endsWith('.db')) {
-      toast('error', 'Sadece .db uzantılı dosyalar kabul edilir.');
+    if (!file.name.endsWith('.db') && !file.name.endsWith('.json')) {
+      toast('error', 'Sadece .db veya .json uzantılı yedek dosyaları kabul edilir.');
       return;
     }
     setConfirmUpload(file);
@@ -179,7 +179,7 @@ export default function BackupPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".db"
+            accept=".db,.json"
             onChange={handleFileSelect}
             className="hidden"
           />

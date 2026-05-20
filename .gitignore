@@ -45,3 +45,7 @@ backend/BarcodePos.API/wwwroot/
 # Tools build
 tools/*/bin/
 tools/*/obj/
+
+# Lokal musteri yedek verileri (gizli)
+dataaa/
+*.bak

@@ -200,9 +200,10 @@ public partial class BackupService : IBackupService
                 }
                 if (await IsValidJsonBackupAsync(tempPath))
                 {
-                    if (!_isSqlServer)
-                        return Result<RestoreResultDto>.Fail("Bu sunucu SQLite kullanıyor; JSON yedeği geri yüklenemez.");
-                    return await PerformJsonRestoreAsync(tempPath);
+                    // JSON yedek her iki provider'a da geri yüklenebilir
+                    return _isSqlite
+                        ? await PerformJsonRestoreForSqliteAsync(tempPath)
+                        : await PerformJsonRestoreAsync(tempPath);
                 }
                 return Result<RestoreResultDto>.Fail("Geçersiz dosya. Lütfen geçerli bir yedek dosyası yükleyin (.db veya .json).");
             }
@@ -240,11 +241,11 @@ public partial class BackupService : IBackupService
 
             if (fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
-                if (!_isSqlServer)
-                    return Result<RestoreResultDto>.Fail("Bu sunucu SQLite kullanıyor; JSON yedeği geri yüklenemez.");
                 if (!await IsValidJsonBackupAsync(backupPath))
                     return Result<RestoreResultDto>.Fail("Yedek dosyası geçerli bir JSON yedeği değil.");
-                return await PerformJsonRestoreAsync(backupPath);
+                return _isSqlite
+                    ? await PerformJsonRestoreForSqliteAsync(backupPath)
+                    : await PerformJsonRestoreAsync(backupPath);
             }
 
             return Result<RestoreResultDto>.Fail("Desteklenmeyen yedek formatı.");
@@ -418,6 +419,116 @@ public partial class BackupService : IBackupService
             catch { /* sessiz */ }
             throw;
         }
+    }
+
+    // ── SQLite JSON restore (masaüstü uygulamasi icin) ──
+
+    /// <summary>
+    /// JSON yedek dosyasını SQLite veritabanına geri yükler.
+    /// SQLite'da IDENTITY_INSERT yoktur — Id'ler doğrudan insert sırasında verilirse korunur.
+    /// </summary>
+    private async Task<Result<RestoreResultDto>> PerformJsonRestoreForSqliteAsync(string sourcePath)
+    {
+        // Önce mevcut veriden bir yedek al
+        string? preRestoreFileName = null;
+        try
+        {
+            var preRestore = await CreateJsonBackupAsync();
+            if (preRestore.Success) preRestoreFileName = preRestore.Data!.FileName;
+        }
+        catch { /* preRestore başarısız olsa bile devam et */ }
+
+        // JSON'u oku
+        await using var fs = new FileStream(sourcePath, FileMode.Open, FileAccess.Read);
+        var data = await JsonSerializer.DeserializeAsync<JsonBackupData>(fs, JsonOpts)
+            ?? throw new InvalidOperationException("JSON yedeği okunamadı.");
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // 1) Foreign key kontrollerini geçici kapat (SQLite syntax)
+            await _context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF;");
+
+            // 2) Tüm tabloları temizle (child → parent)
+            string[] deleteOrder = [
+                nameof(_context.ServiceParts), nameof(_context.ServiceLogs), nameof(_context.ServiceRecords),
+                nameof(_context.ContactMessages),
+                nameof(_context.CustomerTransactions),
+                nameof(_context.StockMovements),
+                nameof(_context.SaleItems), nameof(_context.Sales),
+                nameof(_context.Products),
+                nameof(_context.Subscriptions), nameof(_context.WebCustomers),
+                nameof(_context.Customers), nameof(_context.Categories),
+                nameof(_context.Users),
+                nameof(_context.SubscriptionPlans),
+                nameof(_context.Stores),
+            ];
+#pragma warning disable EF1002 // tablo adları nameof() ile elde ediliyor
+            foreach (var t in deleteOrder)
+                await _context.Database.ExecuteSqlRawAsync($"DELETE FROM \"{t}\"");
+            // sqlite_sequence'i de sıfırla (autoincrement reset)
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence");
+            }
+            catch { /* sqlite_sequence olmayabilir, normal */ }
+#pragma warning restore EF1002
+
+            // 3) Veriyi yeniden yaz (parent → child) — SQLite'da Id verince doğrudan kullanır
+            await SqliteBulkInsertAsync(_context.Stores, data.Stores);
+            await SqliteBulkInsertAsync(_context.SubscriptionPlans, data.SubscriptionPlans);
+            await SqliteBulkInsertAsync(_context.Users, data.Users);
+            await SqliteBulkInsertAsync(_context.Categories, data.Categories);
+            await SqliteBulkInsertAsync(_context.Customers, data.Customers);
+            await SqliteBulkInsertAsync(_context.WebCustomers, data.WebCustomers);
+            await SqliteBulkInsertAsync(_context.Subscriptions, data.Subscriptions);
+            await SqliteBulkInsertAsync(_context.Products, data.Products);
+            await SqliteBulkInsertAsync(_context.Sales, data.Sales);
+            await SqliteBulkInsertAsync(_context.SaleItems, data.SaleItems);
+            await SqliteBulkInsertAsync(_context.StockMovements, data.StockMovements);
+            await SqliteBulkInsertAsync(_context.CustomerTransactions, data.CustomerTransactions);
+            await SqliteBulkInsertAsync(_context.ServiceRecords, data.ServiceRecords);
+            await SqliteBulkInsertAsync(_context.ServiceLogs, data.ServiceLogs);
+            await SqliteBulkInsertAsync(_context.ServiceParts, data.ServiceParts);
+            await SqliteBulkInsertAsync(_context.ContactMessages, data.ContactMessages);
+
+            // 4) FK kontrollerini geri aç
+            await _context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
+
+            await tx.CommitAsync();
+
+            _logger.LogInformation("JSON yedekten SQLite'a geri yükleme tamamlandı: {Source}", Path.GetFileName(sourcePath));
+            return Result<RestoreResultDto>.Ok(new RestoreResultDto
+            {
+                Message = $"Veritabanı başarıyla geri yüklendi. " +
+                         $"({data.Products.Count} ürün, {data.Customers.Count} müşteri, {data.Sales.Count} satış)",
+                PreRestoreBackupFileName = preRestoreFileName
+            });
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            try { await _context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;"); }
+            catch { /* hata sonrası best-effort, foreign_keys zaten kapatmış olabilir */ }
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// SQLite için bulk insert. EF Core entity Add ile Id korunur (SQLite ROWID üzerine yazılır).
+    /// </summary>
+    private async Task SqliteBulkInsertAsync<T>(DbSet<T> dbSet, List<T>? items) where T : class
+    {
+        if (items is null || items.Count == 0) return;
+
+        foreach (var item in items)
+            dbSet.Add(item);
+
+        await _context.SaveChangesAsync();
+
+        // Eklenenleri detach et — bir sonraki tablo için ChangeTracker temiz başlasın
+        foreach (var item in items)
+            _context.Entry(item).State = EntityState.Detached;
     }
 
     /// <summary>

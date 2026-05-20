@@ -27,6 +27,22 @@ public class LicenseController : ControllerBase
     public IActionResult GetStatus()
     {
         var machineId = LicenseService.GetMachineId();
+
+        // Cloud / Desktop / Test ortamında lisans kontrolü atlanır
+        var skipCheck = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISABLE_LICENSE_CHECK"))
+                     || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT"));
+        if (skipCheck)
+        {
+            return Ok(new
+            {
+                machineId,
+                isLicensed = true,
+                customerName = "Cari Soft (Masaüstü)",
+                expiresAt = (DateTime?)null,
+                error = (string?)null,
+            });
+        }
+
         var baseDir = AppContext.BaseDirectory;
         var licenseKey = LicenseService.ReadLicenseFile(baseDir);
         var result = LicenseService.ValidateLicense(licenseKey, machineId);

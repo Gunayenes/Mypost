@@ -74,10 +74,30 @@ async function startBackend() {
     return;
   }
 
+  // Kullanıcı veri klasörü — her kullanıcı için ayrı SQLite konumu
+  // (Program Files altına yazamayız, AppData kullanırız)
+  const userDataDir = app.getPath('userData');
+  const dataDir = path.join(userDataDir, 'data');
+  if (!require('fs').existsSync(dataDir)) {
+    require('fs').mkdirSync(dataDir, { recursive: true });
+  }
+
   const env = {
     ...process.env,
-    ASPNETCORE_ENVIRONMENT: isDev ? 'Development' : 'Production',
+    // Desktop ortamında "Production" appsettings'i değil, default appsettings.json kullan
+    // Bu sayede SQLite connection string aktif olur
+    ASPNETCORE_ENVIRONMENT: isDev ? 'Development' : 'Desktop',
     ASPNETCORE_URLS: API_URL,
+    // SQLite DB konumları — kullanıcı AppData altında, yazma izni garanti
+    ConnectionStrings__DefaultConnection: `Data Source=${path.join(dataDir, 'BarcodePos.db').replace(/\\/g, '/')}`,
+    ConnectionStrings__LicenseConnection: `Data Source=${path.join(dataDir, 'licenses.db').replace(/\\/g, '/')}`,
+    DbProvider: 'Sqlite',
+    DISABLE_LICENSE_CHECK: 'true',
+    // Masaüstü için varsayılan admin (kullanıcı sonra değiştirebilir)
+    SITE_ADMIN_EMAIL: 'admin@carisoft.local',
+    SITE_ADMIN_PASSWORD: 'admin123',
+    // JWT secret rastgele oluşturulmuş bir değer
+    JWT_SECRET: 'Desktop-Cari-Soft-JWT-Local-Secret-32Chars-Min-Random-Value-2026',
   };
 
   backendProcess = spawn(exePath, [], {
