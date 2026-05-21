@@ -72,8 +72,9 @@ public class BackupController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { success = false, message = "Dosya yüklenmedi." });
 
-        if (!file.FileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { success = false, message = "Sadece .db uzantılı dosyalar kabul edilir." });
+        if (!file.FileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase)
+            && !file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { success = false, message = "Sadece .db veya .json uzantılı yedek dosyaları kabul edilir." });
 
         await using var stream = file.OpenReadStream();
         var result = await _backupService.RestoreFromFileAsync(stream);
