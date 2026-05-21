@@ -19,6 +19,15 @@ public class SubscriptionCheckMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Masaüstü / cloud ortamında abonelik kontrolü atlanır (lisans bypass ile birlikte)
+        var skipCheck = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISABLE_LICENSE_CHECK"))
+                     || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT"));
+        if (skipCheck)
+        {
+            await _next(context);
+            return;
+        }
+
         var path = context.Request.Path.Value?.ToLower() ?? "";
 
         // Muaf endpoint'ler — auth, web, site-admin, lisans, health, statik dosyalar

@@ -492,7 +492,31 @@ public partial class BackupService : IBackupService
             await SqliteBulkInsertAsync(_context.ServiceParts, data.ServiceParts);
             await SqliteBulkInsertAsync(_context.ContactMessages, data.ContactMessages);
 
-            // 4) FK kontrollerini geri aç
+            // 4) Default admin (admin/Admin123!) kullanıcısını her zaman ekle
+            //    Müşterinin orijinal şifresi hashed gelir, masaüstüne giriş için garanti yol.
+            //    Mağaza yoksa ilk mağazaya bağlanır.
+            var defaultStoreId = data.Stores.FirstOrDefault()?.Id ?? 1;
+            var existsAdmin = await _context.Users.AsNoTracking()
+                .AnyAsync(u => u.Username == "admin" && u.StoreId == defaultStoreId);
+            if (!existsAdmin)
+            {
+                var maxUserId = data.Users.Count > 0 ? data.Users.Max(u => u.Id) : 0;
+                _context.Users.Add(new BarcodePos.Domain.Entities.User
+                {
+                    Id = maxUserId + 1,
+                    StoreId = defaultStoreId,
+                    Username = "admin",
+                    // BCrypt hash of "Admin123!"
+                    PasswordHash = "$2a$11$GBrDulOzslTYDkE9UmrYg.eyFLfqWXNkYE4g9Qn7HMxnFyDy198AK",
+                    FullName = "Sistem Yöneticisi",
+                    Role = BarcodePos.Domain.Enums.UserRole.Admin,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            // 5) FK kontrollerini geri aç
             await _context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
 
             await tx.CommitAsync();

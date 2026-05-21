@@ -215,6 +215,56 @@ try
             Log.Error(mex, "Özel SQL migration'ları uygulanırken hata oluştu. Uygulama devam ediyor.");
         }
 
+        // ── Default admin garantisi — her startup'ta admin/Admin123! var mı kontrol et ──
+        try
+        {
+            var hasAdmin = db.Users.Any(u => u.Username == "admin");
+            if (!hasAdmin)
+            {
+                var firstStore = db.Stores.FirstOrDefault();
+                int storeId = firstStore?.Id ?? 1;
+                if (firstStore is null)
+                {
+                    db.Stores.Add(new BarcodePos.Domain.Entities.Store
+                    {
+                        Id = 1,
+                        Name = "Ana Mağaza",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    db.SaveChanges();
+                }
+                db.Users.Add(new BarcodePos.Domain.Entities.User
+                {
+                    StoreId = storeId,
+                    Username = "admin",
+                    PasswordHash = "$2a$11$GBrDulOzslTYDkE9UmrYg.eyFLfqWXNkYE4g9Qn7HMxnFyDy198AK", // Admin123!
+                    FullName = "Sistem Yöneticisi",
+                    Role = BarcodePos.Domain.Enums.UserRole.Admin,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+                db.SaveChanges();
+                Log.Information("Default admin kullanıcısı eklendi (admin/Admin123!).");
+            }
+            else
+            {
+                // admin var ama IsActive=false ise aktive et + şifreyi sıfırla (kullanıcı kilitlenmemesin)
+                var admin = db.Users.FirstOrDefault(u => u.Username == "admin");
+                if (admin is not null && !admin.IsActive)
+                {
+                    admin.IsActive = true;
+                    admin.PasswordHash = "$2a$11$GBrDulOzslTYDkE9UmrYg.eyFLfqWXNkYE4g9Qn7HMxnFyDy198AK";
+                    db.SaveChanges();
+                    Log.Information("Default admin yeniden aktive edildi + şifre sıfırlandı.");
+                }
+            }
+        }
+        catch (Exception aex)
+        {
+            Log.Error(aex, "Default admin kontrolü sırasında hata. Uygulama devam ediyor.");
+        }
+
         if (args.Contains("--migrate"))
         {
             Log.Information("Migration tamamlandı. Uygulama kapatılıyor.");
